@@ -1,6 +1,7 @@
 {
   "name": "dtu-legal-assistant",
   "version": "1.0.0",
+  "type": "module",
   "description": "Юридический ИИ-помощник для дела АО Дальтрансуголь с RAG (Google Gemini)",
   "scripts": {
     "dev": "vercel dev",
