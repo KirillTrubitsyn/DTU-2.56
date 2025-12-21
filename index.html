@@ -544,9 +544,9 @@
             position: fixed;
             bottom: 6rem;
             right: 2rem;
-            width: 420px;
+            width: 600px;
             max-width: calc(100vw - 2rem);
-            height: 600px;
+            height: 700px;
             max-height: calc(100vh - 8rem);
             background: var(--card-bg);
             border-radius: 1rem;
@@ -793,7 +793,7 @@
             margin: 0.5rem 1rem;
         }
 
-        @media (max-width: 500px) {
+        @media (max-width: 700px) {
             .chat-modal {
                 right: 0;
                 bottom: 0;
@@ -806,6 +806,105 @@
                 bottom: 1rem;
                 right: 1rem;
             }
+        }
+
+        /* Markdown styling in chat */
+        .chat-message h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0.75rem 0 0.5rem 0;
+            color: var(--primary);
+        }
+        .chat-message h3:first-child {
+            margin-top: 0;
+        }
+        .chat-message ul, .chat-message ol {
+            margin: 0.5rem 0;
+            padding-left: 1.25rem;
+        }
+        .chat-message li {
+            margin: 0.25rem 0;
+        }
+        .chat-message p {
+            margin: 0.5rem 0;
+        }
+        .chat-message p:first-child {
+            margin-top: 0;
+        }
+
+        /* Save button */
+        .chat-message-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.25rem;
+        }
+        .chat-message-wrapper.user {
+            align-items: flex-end;
+        }
+        .save-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            opacity: 0;
+            transition: opacity 0.2s, background 0.2s;
+        }
+        .chat-message-wrapper:hover .save-btn {
+            opacity: 1;
+        }
+        .save-btn:hover {
+            background: var(--bg);
+            color: var(--primary);
+        }
+        .save-btn.saved {
+            opacity: 1;
+            color: var(--success);
+        }
+
+        /* Saved responses panel */
+        .saved-responses {
+            border-top: 1px solid var(--border);
+            max-height: 150px;
+            overflow-y: auto;
+            background: var(--card-bg);
+        }
+        .saved-header {
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: var(--bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .saved-item {
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .saved-item:hover {
+            background: var(--bg);
+        }
+        .saved-item-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .saved-item-delete {
+            color: var(--danger);
+            cursor: pointer;
+            padding: 0.25rem;
         }
     </style>
 </head>
@@ -1295,6 +1394,14 @@
             </div>
         </div>
 
+        <!-- Saved responses panel -->
+        <div class="saved-responses" id="savedPanel" style="display: none;">
+            <div class="saved-header">
+                <span>💾 Сохранённые ответы</span>
+            </div>
+            <div class="saved-list"></div>
+        </div>
+
         <div class="chat-input-area">
             <input
                 type="text"
@@ -1335,6 +1442,7 @@
             modal.classList.toggle('open');
             if (modal.classList.contains('open')) {
                 document.getElementById('chatInput').focus();
+                updateSavedPanel(); // Show saved responses if any
             }
         }
 
@@ -1350,6 +1458,9 @@
             sendMessage();
         }
 
+        // Saved responses storage
+        let savedResponses = JSON.parse(localStorage.getItem('savedResponses') || '[]');
+
         function addMessage(content, role) {
             const messagesContainer = document.getElementById('chatMessages');
 
@@ -1359,19 +1470,119 @@
                 welcome.remove();
             }
 
+            const wrapper = document.createElement('div');
+            wrapper.className = `chat-message-wrapper ${role}`;
+
             const messageDiv = document.createElement('div');
             messageDiv.className = `chat-message ${role}`;
             messageDiv.innerHTML = formatMessage(content);
-            messagesContainer.appendChild(messageDiv);
+            wrapper.appendChild(messageDiv);
+
+            // Add save button for assistant messages
+            if (role === 'assistant') {
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'save-btn';
+                saveBtn.innerHTML = '💾 Сохранить';
+                saveBtn.onclick = () => saveResponse(content, saveBtn);
+                wrapper.appendChild(saveBtn);
+            }
+
+            messagesContainer.appendChild(wrapper);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
+        function saveResponse(content, btn) {
+            const preview = content.substring(0, 100).replace(/\n/g, ' ') + '...';
+            const timestamp = new Date().toLocaleString('ru-RU');
+
+            savedResponses.push({ content, preview, timestamp });
+            localStorage.setItem('savedResponses', JSON.stringify(savedResponses));
+
+            btn.innerHTML = '✓ Сохранено';
+            btn.classList.add('saved');
+            btn.disabled = true;
+
+            updateSavedPanel();
+        }
+
+        function updateSavedPanel() {
+            const panel = document.getElementById('savedPanel');
+            if (!panel) return;
+
+            if (savedResponses.length === 0) {
+                panel.style.display = 'none';
+                return;
+            }
+
+            panel.style.display = 'block';
+            const list = panel.querySelector('.saved-list');
+            list.innerHTML = savedResponses.map((item, index) => `
+                <div class="saved-item" onclick="showSavedResponse(${index})">
+                    <span class="saved-item-text">${item.preview}</span>
+                    <span class="saved-item-delete" onclick="event.stopPropagation(); deleteSaved(${index})">✕</span>
+                </div>
+            `).join('');
+        }
+
+        function showSavedResponse(index) {
+            const item = savedResponses[index];
+            if (item) {
+                alert(item.content);
+            }
+        }
+
+        function deleteSaved(index) {
+            savedResponses.splice(index, 1);
+            localStorage.setItem('savedResponses', JSON.stringify(savedResponses));
+            updateSavedPanel();
+        }
+
         function formatMessage(content) {
-            // Basic markdown-like formatting
-            return content
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/\n/g, '<br>');
+            // Enhanced markdown formatting
+            let html = content;
+
+            // Escape HTML first
+            html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // Headers (### Header)
+            html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+            html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+
+            // Bold (**text**)
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+            // Italic (*text*)
+            html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+
+            // Bullet lists (* item or - item)
+            html = html.replace(/^[\*\-] (.+)$/gm, '<li>$1</li>');
+
+            // Wrap consecutive <li> in <ul>
+            html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+
+            // Numbered lists (1. item)
+            html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+            // Paragraphs (double newline)
+            html = html.replace(/\n\n/g, '</p><p>');
+
+            // Single newlines (but not after block elements)
+            html = html.replace(/(?<!<\/h3>|<\/ul>|<\/li>|<\/p>)\n(?!<)/g, '<br>');
+
+            // Clean up extra <br> after block elements
+            html = html.replace(/<\/h3><br>/g, '</h3>');
+            html = html.replace(/<\/ul><br>/g, '</ul>');
+
+            // Wrap in paragraph if not starting with block element
+            if (!html.startsWith('<h3>') && !html.startsWith('<ul>') && !html.startsWith('<p>')) {
+                html = '<p>' + html + '</p>';
+            }
+
+            // Clean up empty paragraphs
+            html = html.replace(/<p><\/p>/g, '');
+            html = html.replace(/<p><br><\/p>/g, '');
+
+            return html;
         }
 
         function showTyping() {
