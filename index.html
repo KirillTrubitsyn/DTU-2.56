@@ -811,6 +811,28 @@
             margin-top: 0;
         }
 
+        /* Formula styling */
+        .chat-message .formula {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin: 0.75rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .chat-message .formula-inline {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 0.25rem;
+            padding: 0.15rem 0.4rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
         /* Save button */
         .chat-message-wrapper {
             display: flex;
@@ -1522,6 +1544,12 @@
 
             // Escape HTML first
             html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // LaTeX block formulas $$...$$ -> styled formula block
+            html = html.replace(/\$\$([^$]+)\$\$/g, '<div class="formula">$1</div>');
+
+            // LaTeX inline formulas $...$ -> styled inline formula
+            html = html.replace(/\$([^$\n]+)\$/g, '<code class="formula-inline">$1</code>');
 
             // Headers (### Header)
             html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
