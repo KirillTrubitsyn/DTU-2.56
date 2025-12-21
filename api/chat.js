@@ -1,0 +1,170 @@
+import Anthropic from '@anthropic-ai/sdk';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize clients
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
+
+// System prompt with case context
+const SYSTEM_PROMPT = `Ты — юридический ИИ-помощник, специализирующийся на деле № А73-19604/2025 АО «Дальтрансуголь» против Приамурского МУ Росприроднадзора.
+
+КОНТЕКСТ ДЕЛА:
+- Компания: АО «Дальтрансуголь» (угольный терминал)
+- Истец: Приамурское МУ Росприроднадзора
+- Сумма иска: 2 562 113 054,91 ₽
+- Суть: возмещение вреда за загрязнение водного объекта (бухта Мучке) угольной пылью
+
+ОСНОВНЫЕ ЛИНИИ ЗАЩИТЫ (по силе):
+1. [9/10] Постановление КС РФ № 56-П от 06.12.2024 — суд обязан учитывать фактический вред, не формально применять методики
+2. [8/10] Данные мониторинга ДВФУ 2008-2024 — отсутствие реального экологического вреда
+3. [6/10] Зачёт экологических инвестиций (2 047 545 642 ₽) — п.14 Методики 87
+4. [5/10] Оспаривание коэффициента Кзагр (6 → 1) — диффузное загрязнение
+5. [5/10] Соблюдение нормативов выбросов — концентрации в 10× ниже ПДК
+6. [4/10] Квалификация угольной пыли — выброс ≠ отход
+7. [2/10] Процедурные нарушения — НЕ РЕКОМЕНДУЕТСЯ использовать
+
+ВАЖНО:
+- Отвечай на русском языке
+- Давай конкретные ссылки на документы и судебные акты
+- Если информация из контекста — укажи источник
+- Если не знаешь точного ответа — скажи об этом честно
+- Будь кратким, но информативным`;
+
+// Function to get embeddings using Voyage AI via Supabase
+async function getEmbedding(text) {
+  try {
+    // Call Supabase Edge Function for embeddings
+    const { data, error } = await supabase.functions.invoke('embed', {
+      body: { text }
+    });
+
+    if (error) throw error;
+    return data.embedding;
+  } catch (error) {
+    console.error('Embedding error:', error);
+    return null;
+  }
+}
+
+// Function to search relevant documents in Supabase
+async function searchDocuments(query, limit = 5) {
+  try {
+    const embedding = await getEmbedding(query);
+
+    if (!embedding) {
+      // Fallback: simple text search if embeddings fail
+      const { data, error } = await supabase
+        .from('documents')
+        .select('id, title, content, source')
+        .textSearch('content', query, { type: 'websearch', config: 'russian' })
+        .limit(limit);
+
+      if (error) throw error;
+      return data || [];
+    }
+
+    // Vector similarity search
+    const { data, error } = await supabase.rpc('match_documents', {
+      query_embedding: embedding,
+      match_threshold: 0.7,
+      match_count: limit
+    });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Search error:', error);
+    return [];
+  }
+}
+
+// Format documents as context
+function formatContext(documents) {
+  if (!documents || documents.length === 0) {
+    return '';
+  }
+
+  const context = documents.map((doc, i) =>
+    `[Документ ${i + 1}: ${doc.title || 'Без названия'}]\n${doc.content}`
+  ).join('\n\n---\n\n');
+
+  return `\n\nРЕЛЕВАНТНЫЕ ДОКУМЕНТЫ ИЗ БАЗЫ:\n${context}`;
+}
+
+// Main handler
+export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { message, history = [] } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Search for relevant documents
+    const documents = await searchDocuments(message);
+    const contextAddition = formatContext(documents);
+
+    // Build conversation messages
+    const messages = [
+      ...history.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      })),
+      {
+        role: 'user',
+        content: message + contextAddition
+      }
+    ];
+
+    // Call Claude API
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
+      messages: messages
+    });
+
+    // Extract text response
+    const assistantMessage = response.content
+      .filter(block => block.type === 'text')
+      .map(block => block.text)
+      .join('\n');
+
+    // Return response with sources
+    return res.status(200).json({
+      response: assistantMessage,
+      sources: documents.map(d => d.title || d.source).filter(Boolean)
+    });
+
+  } catch (error) {
+    console.error('Chat API error:', error);
+
+    if (error.status === 401) {
+      return res.status(500).json({ error: 'Invalid API key configuration' });
+    }
+
+    return res.status(500).json({
+      error: 'Failed to generate response',
+      details: error.message
+    });
+  }
+}
