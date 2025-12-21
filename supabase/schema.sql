@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS documents (
   source TEXT, -- Источник документа (напр. "Постановление КС РФ 56-П")
   category TEXT, -- Категория: court_decision, law, expert_opinion, evidence, etc.
   metadata JSONB DEFAULT '{}', -- Дополнительные данные
-  embedding vector(1536), -- Вектор для семантического поиска (размерность зависит от модели)
+  embedding vector(768), -- Вектор для Google text-embedding-004 (768 измерений)
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -37,7 +37,7 @@ CREATE INDEX IF NOT EXISTS documents_category_idx ON documents(category);
 -- Функция для семантического поиска документов
 -- =====================================================
 CREATE OR REPLACE FUNCTION match_documents(
-  query_embedding vector(1536),
+  query_embedding vector(768),
   match_threshold float DEFAULT 0.7,
   match_count int DEFAULT 5
 )
