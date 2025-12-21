@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>АО «Дальтрансуголь» — Анализ линий защиты</title>
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent-gold: #d69e2e;
+            --strong: #38a169;
+            --strong-light: #c6f6d5;
+            --medium: #d69e2e;
+            --medium-light: #fefcbf;
+            --weak: #e53e3e;
+            --weak-light: #fed7d7;
+            --bg: #f7fafc;
+            --card-bg: #ffffff;
+            --text: #2d3748;
+            --text-muted: #718096;
+            --border: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            animation: pulse 15s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.3; }
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .case-number {
+            font-size: 1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .claim-amount {
+            display: inline-block;
+            background: var(--accent-gold);
+            color: var(--primary);
+            padding: 0.5rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: 700;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: transform 0.2s;
+        }
+
+        .legend-item:hover {
+            transform: scale(1.05);
+        }
+
+        .legend-item.strong {
+            background: var(--strong-light);
+            color: var(--strong);
+            border: 2px solid var(--strong);
+        }
+
+        .legend-item.medium {
+            background: var(--medium-light);
+            color: #744210;
+            border: 2px solid var(--medium);
+        }
+
+        .legend-item.weak {
+            background: var(--weak-light);
+            color: var(--weak);
+            border: 2px solid var(--weak);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-item.strong .legend-dot { background: var(--strong); }
+        .legend-item.medium .legend-dot { background: var(--medium); }
+        .legend-item.weak .legend-dot { background: var(--weak); }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border-left: 5px solid transparent;
+        }
+
+        .card:hover {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
+            transform: translateY(-2px);
+        }
+
+        .card.strong { border-left-color: var(--strong); }
+        .card.medium { border-left-color: var(--medium); }
+        .card.weak { border-left-color: var(--weak); }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            user-select: none;
+        }
+
+        .card.strong .card-header { background: linear-gradient(90deg, var(--strong-light) 0%, transparent 100%); }
+        .card.medium .card-header { background: linear-gradient(90deg, var(--medium-light) 0%, transparent 100%); }
+        .card.weak .card-header { background: linear-gradient(90deg, var(--weak-light) 0%, transparent 100%); }
+
+        .card-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .card.strong .card-number { background: var(--strong); }
+        .card.medium .card-number { background: var(--medium); }
+        .card.weak .card-number { background: var(--weak); }
+
+        .card-title-area {
+            flex: 1;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .card-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .card-badges {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-strength {
+            background: var(--primary);
+            color: white;
+        }
+
+        .badge-court {
+            background: var(--border);
+            color: var(--text-muted);
+        }
+
+        .badge-court.yes { background: #bee3f8; color: #2b6cb0; }
+        .badge-court.no { background: #e2e8f0; color: #718096; }
+        .badge-court.partial { background: #fefcbf; color: #744210; }
+
+        .expand-icon {
+            width: 24px;
+            height: 24px;
+            transition: transform 0.3s;
+            color: var(--text-muted);
+        }
+
+        .card.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+
+        .card-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+
+        .card.expanded .card-content {
+            max-height: 2000px;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .info-section {
+            background: var(--bg);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+        }
+
+        .info-section h4 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-section h4::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            border-radius: 2px;
+        }
+
+        .info-section.rpn h4::before { background: #e53e3e; }
+        .info-section.court h4::before { background: #3182ce; }
+        .info-section.rec h4::before { background: #38a169; }
+        .info-section.arg h4::before { background: #805ad5; }
+
+        .info-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-section li {
+            padding: 0.5rem 0;
+            padding-left: 1.25rem;
+            position: relative;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .info-section li:last-child {
+            border-bottom: none;
+        }
+
+        .info-section li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--text-muted);
+        }
+
+        .info-section p {
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #fef3c7 0%, #fef3c7 100%);
+            padding: 0.1rem 0.3rem;
+            border-radius: 0.25rem;
+        }
+
+        .court-decision {
+            background: #ebf8ff;
+            border-left: 3px solid #3182ce;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0 0.5rem 0.5rem 0;
+            font-size: 0.85rem;
+        }
+
+        .court-decision .date {
+            font-weight: 600;
+            color: #2b6cb0;
+        }
+
+        .abandon-banner {
+            background: linear-gradient(90deg, var(--weak-light) 0%, #fff 100%);
+            border: 2px dashed var(--weak);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .abandon-banner strong {
+            color: var(--weak);
+        }
+
+        .strategy-section {
+            margin-top: 3rem;
+            background: var(--card-bg);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .strategy-section h2 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .strategy-card {
+            padding: 1.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .strategy-card:hover {
+            transform: scale(1.02);
+        }
+
+        .strategy-card.priority {
+            background: linear-gradient(135deg, var(--strong-light) 0%, #9ae6b4 100%);
+            border: 2px solid var(--strong);
+        }
+
+        .strategy-card.support {
+            background: linear-gradient(135deg, var(--medium-light) 0%, #fbd38d 100%);
+            border: 2px solid var(--medium);
+        }
+
+        .strategy-card.abandon {
+            background: linear-gradient(135deg, var(--weak-light) 0%, #fc8181 100%);
+            border: 2px solid var(--weak);
+        }
+
+        .strategy-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .strategy-card.priority h3 { color: #276749; }
+        .strategy-card.support h3 { color: #744210; }
+        .strategy-card.abandon h3 { color: #c53030; }
+
+        .strategy-card p {
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .progress-bar .fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .card.strong .progress-bar .fill { background: var(--strong); }
+        .card.medium .progress-bar .fill { background: var(--medium); }
+        .card.weak .progress-bar .fill { background: var(--weak); }
+
+        .tooltip {
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dotted var(--text-muted);
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.3rem; }
+            .card-header { flex-wrap: wrap; }
+            .card-badges { width: 100%; margin-top: 0.5rem; }
+            .info-grid { grid-template-columns: 1fr; }
+            .strategy-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>АО «ДАЛЬТРАНСУГОЛЬ»</h1>
+        <p class="case-number">Дело № А73-19604/2025 • Анализ линий защиты</p>
+        <div class="claim-amount">Цена иска: 2 562 113 054,91 ₽</div>
+    </header>
+
+    <div class="container">
+        <div class="legend">
+            <div class="legend-item strong">
+                <span class="legend-dot"></span>
+                Сильный (8-10)
+            </div>
+            <div class="legend-item medium">
+                <span class="legend-dot"></span>
+                Средний (4-7)
+            </div>
+            <div class="legend-item weak">
+                <span class="legend-dot"></span>
+                Отказаться (1-3)
+            </div>
+        </div>
+
+        <!-- Card 1: Constitutional Court -->
+        <div class="card strong" onclick="toggleCard(this)">
+            <div class="card-header">
+                <div class="card-number">1</div>
+                <div class="card-title-area">
+                    <div class="card-title">Позиция Конституционного Суда РФ</div>
+                    <div class="card-subtitle">Постановление № 56-П от 06.12.2024</div>
+                </div>
+                <div class="card-badges">
+                    <span class="badge badge-strength">9/10</span>
+                    <span class="badge badge-court no">Не заявлялось</span>
+                </div>
+                <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="card-content">
+                <div class="card-body">
+                    <div class="progress-bar"><div class="fill" style="width: 90%"></div></div>
+                    
+                    <div class="info-grid">
+                        <div class="info-section arg">
+                            <h4>Суть аргумента</h4>
+                            <p>Суд <strong>не вправе</strong> ограничиваться установлением элементов состава правонарушения. <span class="highlight">Обязан учитывать обстоятельства, исключающие или уменьшающие вред.</span> Формальное применение методик расчёта <strong>недопустимо</strong>. Требуется оценка фактических неблагоприятных экологических последствий.</p>
+                        </div>
+                        
+                        <div class="info-section rpn">
+                            <h4>Вероятная позиция Росприроднадзора</h4>
+                            <ul>
+                                <li>КС рассматривал конкретное дело, не аналогичное настоящему</li>
+                                <li>Методика 87 утверждена Минприроды и подлежит обязательному применению</li>
+                                <li>Суды правильно применили методику в соответствии с законом</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="info-section court">
+                            <h4>Позиция судов</h4>
+                            <p><strong>Не рассматривалось.</strong> Постановление КС вынесено 06.12.2024 — после завершения всех административных дел и решений арбитражных судов по делу А73-8310/2024 (АС ДВО 09.07.2025).</p>
+                            <p style="margin-top: 0.75rem; color: var(--strong); font-weight: 600;">Данный аргумент в судах ещё не заявлялся.</p>
+                        </div>
+                        
+                        <div class="info-section rec">
+                            <h4>Дополнительно к отзыву</h4>
+                            <ul>
+                                <li>Представить практику применения КС 56-П:</li>
+                                <li><strong>АС ЗСО от 25.12.2024</strong></li>
+                                <li><strong>АС ПО от 28.02.2025</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: No Real Damage -->
+        <div class="card strong" onclick="toggleCard(this)">
+            <div class="card-header">
+                <div class="card-number">2</div>
+                <div class="card-title-area">
+                    <div class="card-title">Отсутствие реального экологического вреда</div>
+                    <div class="card-subtitle">Мониторинг ДВФУ 2008-2024 (16 лет)</div>
+                </div>
+                <div class="card-badges">
+                    <span class="badge badge-strength">8/10</span>
+                    <span class="badge badge-court partial">Частично</span>
+                </div>
+                <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="card-content">
+                <div class="card-body">
+                    <div class="progress-bar"><div class="fill" style="width: 80%"></div></div>
+                    
+                    <div class="info-grid">
+                        <div class="info-section arg">
+                            <h4>Суть аргумента</h4>
+                            <p>Данные мониторинга ДВФУ за <strong>16 лет</strong> показывают: здоровый бентос, нормальная фито/зоопланктон, ихтиофауна в норме. Видеосъёмка 2023: высокая продуктивность, отсутствие заиления. Заключение Галышевой: <span class="highlight">«Деятельность терминала НЕ оказывает негативного воздействия на экосистему бухты»</span>. Промысловые виды в норме, «подводные леса» 70-98% покрытия.</p>
+                        </div>
+                        
+                        <div class="info-section rpn">
+                            <h4>Позиция Росприроднадзора</h4>
+                            <ul>
+                                <li>Прямая позиция в материалах отсутствует</li>
+                                <li>Акцент на формальном нарушении ст. 56 ВК РФ (запрет сброса отходов)</li>
+                                <li>Факт загрязнения подтверждён актами, протоколами, фото</li>
+                                <li>Наличие последствий не является обязательным элементом состава</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="info-section court">
+                            <h4>Позиция судов (мотивировка)</h4>
+                            <p><strong>Не исследовалось по существу.</strong></p>
+                            <div class="court-decision">
+                                <span class="date">СОЮ (15.06.2023, 09.11.2023, 16.11.2023):</span> фокус на факте нарушения, а не на последствиях.
+                            </div>
+                            <div class="court-decision">
+                                <span class="date">Кировский суд 16.10.2025:</span> довод о благополучии флоры/фауны отклонён как «несущественный для квалификации».
+                            </div>
+                            <div class="court-decision">
+                                <span class="date">АС ХК, 6 ААС, АС ДВО по делу ВТУ:</span> экологические данные детально не анализировались.
+                            </div>
+                        </div>
+                        
+                        <div class="info-section rec">
+                            <h4>Дополнительно к отзыву</h4>
+                            <p><strong>Ходатайство о назначении судебной экологической экспертизы</strong> в арбитражном процессе для объективной оценки фактического состояния экосистемы.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Investment Offset -->
+        <div class="card medium" onclick="toggleCard(this)">
+            <div class="card-header">
+                <div class="card-number">3</div>
+                <div class="card-title-area">
+                    <div class="card-title">Зачёт экологических инвестиций</div>
+                    <div class="card-subtitle">Инвестиции с 2023: 2 047 545 642 ₽</div>
+                </div>
+                <div class="card-badges">
+                    <span class="badge badge-strength">6/10</span>
+                    <span class="badge badge-court no">Не заявлялось</span>
+                </div>
+                <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="card-content">
+                <div class="card-body">
+                    <div class="progress-bar"><div class="fill" style="width: 60%"></div></div>
+                    
+                    <div class="info-grid">
+                        <div class="info-section arg">
+                            <h4>Суть аргумента</h4>
+                            <p>Ветрозащитные экраны (25м × 2400м), системы пылеподавления, станция СКАТ. По <strong>п.14 Методики 87</strong> затраты на предотвращение сверхнормативного воздействия вычитаются из суммы вреда. Общий принцип: п.11 ст.16.3 ФЗ-7.</p>
+                        </div>
+                        
+                        <div class="info-section rpn">
+                            <h4>Вероятная позиция Росприроднадзора</h4>
+                            <ul>
+                                <li>П.14 Методики 87 — только для сбросов сточных вод (п.11), не для захламления (п.16)</li>
+                                <li>Пылеподавление = обычная производственная деятельность, не компенсация вреда</li>
+                                <li>Инвестиции сделаны ПОСЛЕ причинения вреда</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="info-section court">
+                            <h4>Позиция судов</h4>
+                            <p><strong>Не рассматривалось.</strong> Довод не заявлялся ни в административных делах СОЮ, ни в арбитражном деле А73-8310/2024.</p>
+                            <p style="margin-top: 0.75rem;">Судебная практика по применению п.14 к п.16 Методики 87 отсутствует.</p>
+                        </div>
+                        
+                        <div class="info-section rec">
+                            <h4>Дополнительно к отзыву</h4>
+                            <p style="color: var(--text-muted);">— (в отзыве изложено полно)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4: Methodology Dispute -->
+        <div class="card medium" onclick="toggleCard(this)">
+            <div class="card-header">
+                <div class="card-number">4</div>
+                <div class="card-title-area">
+                    <div class="card-title">Оспаривание методики расчёта</div>
+                    <div class="card-subtitle">Коэффициент Кзагр: 6 → 1</div>
+                </div>
+                <div class="card-badges">
+                    <span class="badge badge-strength">5/10</span>
+                    <span class="badge badge-court yes">Заявлялось</span>
+                </div>
+                <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="card-content">
+                <div class="card-body">
+                    <div class="progress-bar"><div class="fill" style="width: 50%"></div></div>
+                    
+                    <div class="info-grid">
+                        <div class="info-section arg">
+                            <h4>Суть аргумента</h4>
+                            <p>Кзагр=6 применяется при скоплении отходов >10 м² на 100 м² водной площади. Угольная пыль = <strong>диффузное</strong>, не очаговое загрязнение. Космоснимки: большая часть акватории НЕ покрыта. Корректный Кзагр=1 (снижение в 6 раз). П.16 Методики 87 для бытовых отходов, не пыли.</p>
+                        </div>
+                        
+                        <div class="info-section rpn">
+                            <h4>Позиция Росприроднадзора</h4>
+                            <ul>
+                                <li>Загрязнение носит «площадной характер», простирается вглубь водного объекта</li>
+                                <li>Площадь 14 589,94 м² подтверждена экспертным заключением ФГБУ ТОтехмордирекция (приёмник PrinCe i50)</li>
+                                <li>Взвешенные вещества в пробах воды = проникновение пыли в толщу воды</li>
+                                <li>Площадь >0,01 м² исключает Кзагр=1 по Таблице 10</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="info-section court">
+                            <h4>Позиция судов (мотивировка отказа)</h4>
+                            <div class="court-decision">
+                                <span class="date">АС ХК 15.01.2025:</span> «Площадь скопления мусора превышает 0,01 кв.м., что исключает применение коэффициента 1».
+                            </div>
+                            <div class="court-decision">
+                                <span class="date">6 ААС 08.04.2025:</span> «Кзагр=6 обоснован тем, что загрязнение носит площадной характер».
+                            </div>
+                            <div class="court-decision">
+                                <span class="date">АС ДВО 09.07.2025:</span> космоснимок отклонён — «невозможно достоверно установить состояние покрова 04.03, тогда как осмотр был 03.03.2023».
+                            </div>
+                        </div>
+                        
+                        <div class="info-section rec">
+                            <h4>Дополнительно к отзыву</h4>
+                            <p style="color: var(--text-muted);">— (в отзыве: расчёт по п.17, моделирование ИСП РАН)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 5: Emission Standards -->
+        <div class="card medium" onclick="toggleCard(this)">
+            <div class="card-header">
+                <div class="card-number">5</div>
+                <div class="card-title-area">
+                    <div class="card-title">Соблюдение нормативов выбросов</div>
+                    <div class="card-subtitle">Концентрации в 10× ниже ПДК</div>
+                </div>
+                <div class="card-badges">
+                    <span class="badge badge-strength">5/10</span>
+                    <span class="badge badge-court yes">Заявлялось</span>
+                </div>
+                <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="card-content">
+                <div class="card-body">
+                    <div class="progress-bar"><div class="fill" style="width: 50%"></div></div>
+                    
+                    <div class="info-grid">
+                        <div class="info-section arg">
+                            <h4>Суть аргумента</h4>
+                            <p>Проверка РПН: превышений нормативов выбросов угольной пыли НЕ установлено. Пробы воздуха: <strong>0,023-0,033 мг/м³</strong> при ПДК 0,3 мг/м³. ДТУ платит за НВОС по выбросам угольной пыли. Осаждение пыли = естественный физический процесс.</p>
+                        </div>
+                        
+                        <div class="info-section rpn">
+                            <h4>Позиция Росприроднадзора</h4>
+                            <ul>
+                                <li>Плата НВОС = плата за атмосферные выбросы, НЕ за загрязнение воды</li>
+                                <li>Ст.16 ФЗ-7: разные виды негативного воздействия</li>
+                                <li>Соблюдение нормативов выбросов не освобождает от ответственности за захламление водного объекта отходами</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="info-section court">
+                            <h4>Позиция судов (мотивировка отказа)</h4>
+                            <div class="court-decision">
+                                <span class="date">Кировский суд 16.10.2025:</span> «Доводы о том, что уголь не является загрязнителем и отсутствует в перечне отходов, выбросы являются естественным процессом пыления — <strong>несостоятельны</strong>».
+                            </div>
+                            <p style="margin-top: 0.75rem;">Суд разграничил воздействие на атмосферу и воду как самостоятельные правонарушения.</p>
+                        </div>
+                        
+                        <div class="info-section rec">
+                            <h4>Дополнительно к отзыву</h4>
+                            <p style="color: var(--text-muted);">— (в отзыве: довод о двойном взыскании)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 6: Legal Qualification -->
+        <div class="card medium" onclick="toggleCard(this)">
+            <div class="card-header">
+                <div class="card-number">6</div>
+                <div class="card-title-area">
+                    <div class="card-title">Правовая квалификация угольной пыли</div>
+                    <div class="card-subtitle">Выброс ≠ отход</div>
+                </div>
+                <div class="card-badges">
+                    <span class="badge badge-strength">4/10</span>
+                    <span class="badge badge-court yes">Заявлялось</span>
+                </div>
+                <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="card-content">
+                <div class="card-body">
+                    <div class="progress-bar"><div class="fill" style="width: 40%"></div></div>
+                    
+                    <div class="info-grid">
+                        <div class="info-section arg">
+                            <h4>Суть аргумента</h4>
+                            <p>Угольная пыль в Перечне загрязняющих веществ п.37(1) для воздуха, не в ФККО как самостоятельный отход. Код 6 19 111 13 71 4 — для дробления на ТЭС/ТЭЦ, не угольных терминалов.</p>
+                        </div>
+                        
+                        <div class="info-section rpn">
+                            <h4>Позиция Росприроднадзора</h4>
+                            <ul>
+                                <li>Ст.1 ФЗ-89: отходы = вещества, подлежащие удалению</li>
+                                <li>ГОСТ 30772-2001 п.3.11: отходы = остатки, не используемые в деятельности</li>
+                                <li>Приказ РПН 242: мусор при дроблении угля (код 6 19 111 13 71 4)</li>
+                                <li>Распоряжение 1316-р п.166: взвешенные вещества = загрязнители воды</li>
+                                <li>Морфология: угольно-песчаная смесь 99,5±29,8%, пенопласт 0,5±0,2%</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="info-section court">
+                            <h4>Позиция судов (мотивировка отказа)</h4>
+                            <div class="court-decision">
+                                <span class="date">АС ХК 06.06.2024:</span> «Угольная пыль в силу ст.1 ФЗ-89 относится к отходам производства, подлежащим удалению».
+                            </div>
+                            <div class="court-decision">
+                                <span class="date">Кировский 23.05.2025:</span> «Угольная пыль является отходом по ФККО, V класс опасности».
+                            </div>
+                            <div class="court-decision">
+                                <span class="date">АС ДВО 27.11.2024:</span> «Довод о том, что собранные просыпи возвращаются в техпроцесс, оставлен без оценки».
+                            </div>
+                        </div>
+                        
+                        <div class="info-section rec">
+                            <h4>Дополнительно к отзыву</h4>
+                            <p style="color: var(--text-muted);">— (в отзыве: экспертизы МГУ, УралНИИЭкология)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 7: Procedural Violations -->
+        <div class="card weak" onclick="toggleCard(this)">
+            <div class="card-header">
+                <div class="card-number">7</div>
+                <div class="card-title-area">
+                    <div class="card-title">Процедурные нарушения проверки</div>
+                    <div class="card-subtitle">Согласование с ненадлежащей прокуратурой</div>
+                </div>
+                <div class="card-badges">
+                    <span class="badge badge-strength">2/10</span>
+                    <span class="badge badge-court yes">Заявлялось</span>
+                </div>
+                <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="card-content">
+                <div class="card-body">
+                    <div class="progress-bar"><div class="fill" style="width: 20%"></div></div>
+                    
+                    <div class="info-grid">
+                        <div class="info-section arg">
+                            <h4>Суть аргумента</h4>
+                            <p>Проверка согласована с Амурским бассейновым природоохранным прокурором, полномочия которого НЕ распространяются на Ванинский и Советско-Гаванский районы (Распоряжение ГП РФ от 13.06.2018 № 360/7р).</p>
+                        </div>
+                        
+                        <div class="info-section rpn">
+                            <h4>Позиция Росприроднадзора</h4>
+                            <ul>
+                                <li>Распоряжение ГП РФ от 16.05.2016 № 288/7р: Амурская прокуратура осуществляет надзор за ДВМУ РПН</li>
+                                <li>Согласование допустимо по месту нахождения контрольного органа</li>
+                                <li>Информ. письмо ГП от 09.10.2023 критикует прокурора, но НЕ отменяет результаты проверки ДТУ</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="info-section court">
+                            <h4>Позиция судов (мотивировка отказа)</h4>
+                            <div class="court-decision">
+                                <span class="date">Советско-Гаванский суд 15.06.2023, 09.11.2023, 16.11.2023:</span> «Согласование по месту нахождения надзорного органа допустимо».
+                            </div>
+                            <div class="court-decision">
+                                <span class="date">Кировский 23.05.2025, 16.10.2025:</span> «Информ. письмо ГП не содержит указания на незаконность проверки ДТУ».
+                            </div>
+                            <div class="court-decision">
+                                <span class="date">Хабаровский краевой суд 27.08.2025:</span> позиция нижестоящих судов подтверждена.
+                            </div>
+                        </div>
+                        
+                        <div class="info-section rec">
+                            <h4>Рекомендация</h4>
+                            <div class="abandon-banner">
+                                <strong>✗ ОТКАЗАТЬСЯ ОТ АРГУМЕНТА</strong>
+                                <p>Исчерпан во всех инстанциях. Не влияет на существо спора.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strategy Section -->
+        <div class="strategy-section">
+            <h2>Итоговая стратегия</h2>
+            <div class="strategy-grid">
+                <div class="strategy-card priority">
+                    <h3>★ ПРИОРИТЕТ</h3>
+                    <p><strong>Линии 1-2:</strong> КС 56-П + данные ДВФУ = доказать отсутствие реального вреда</p>
+                </div>
+                <div class="strategy-card support">
+                    <h3>● ПОДДЕРЖКА</h3>
+                    <p><strong>Линии 3-6:</strong> Зачёт инвестиций, методика, квалификация — аргументы изложены в отзыве</p>
+                </div>
+                <div class="strategy-card abandon">
+                    <h3>✗ ОТКАЗАТЬСЯ</h3>
+                    <p><strong>Линия 7:</strong> Процедурные нарушения — многократно отклонены всеми инстанциями</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>Дело № А73-19604/2025 • АО «Дальтрансуголь» • Приамурское МУ Росприроднадзора</p>
+        <p style="margin-top: 0.5rem;">Потенциальное снижение: до полного отказа (линии 1-2) | минус 2 047 545 642 ₽ (линия 3)</p>
+    </footer>
+
+    <script>
+        function toggleCard(card) {
+            card.classList.toggle('expanded');
+        }
+
+        // Expand first card by default
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstCard = document.querySelector('.card');
+            if (firstCard) {
+                firstCard.classList.add('expanded');
+            }
+        });
+    </script>
+</body>
+</html>
