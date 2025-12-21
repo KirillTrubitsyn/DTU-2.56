@@ -4,6 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>АО «Дальтрансуголь» — Анализ линий защиты</title>
+
+    <!-- Favicon и иконки -->
+    <link rel="icon" type="image/x-icon" href="favicon-32.ico">
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon-96.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+    <!-- PWA манифест -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- PWA мета-теги -->
+    <meta name="theme-color" content="#1a365d">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Дальтрансуголь">
+    <meta name="application-name" content="Дальтрансуголь">
+    <meta name="msapplication-TileColor" content="#1a365d">
+    <meta name="msapplication-TileImage" content="icon-192.png">
+
     <style>
         :root {
             --primary: #1a365d;
@@ -1430,6 +1451,21 @@
                 sendButton.disabled = false;
                 input.focus();
             }
+        }
+    </script>
+
+    <!-- Регистрация Service Worker для PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('Service Worker зарегистрирован:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('Ошибка регистрации Service Worker:', error);
+                    });
+            });
         }
     </script>
 </body>
