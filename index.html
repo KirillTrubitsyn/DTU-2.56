@@ -25,6 +25,9 @@
     <meta name="msapplication-TileColor" content="#1a365d">
     <meta name="msapplication-TileImage" content="icon-192.png">
 
+    <!-- PDF.js для рендеринга PDF страниц -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
     <style>
         :root {
             --primary: #1a365d;
@@ -1627,7 +1630,7 @@
                 <div id="adminUploadForm" style="display: none;">
                     <!-- Drop Zone for OCR -->
                     <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-                        <input type="file" id="fileInput" accept="image/*,.pdf" onchange="handleFileSelect(event)">
+                        <input type="file" id="fileInput" accept="image/*,.pdf,.md,.txt" onchange="handleFileSelect(event)">
                         <div id="dropZoneContent">
                             <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -1635,11 +1638,11 @@
                                 <line x1="12" y1="3" x2="12" y2="15"/>
                             </svg>
                             <div class="drop-zone-text">Перетащите файл или нажмите для выбора</div>
-                            <div class="drop-zone-hint">Изображение или PDF — ИИ автоматически распознает текст</div>
+                            <div class="drop-zone-hint">PDF (все страницы), изображения, Markdown, TXT</div>
                         </div>
                         <div id="processingIndicator" class="processing-indicator" style="display: none;">
                             <div class="spinner"></div>
-                            <span>ИИ распознаёт документ...</span>
+                            <span id="processingText">ИИ распознаёт документ...</span>
                         </div>
                     </div>
 
@@ -2062,16 +2065,21 @@
         }
 
         async function processFile(file) {
+            // Определяем тип файла
+            const isImage = file.type.startsWith('image/');
+            const isPDF = file.type === 'application/pdf';
+            const isText = file.name.endsWith('.md') || file.name.endsWith('.txt') || file.type === 'text/plain' || file.type === 'text/markdown';
+
             // Validate file type
-            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
-            if (!validTypes.includes(file.type)) {
-                showAdminMessage('Поддерживаются только изображения (JPG, PNG, GIF, WebP) и PDF', 'error');
+            if (!isImage && !isPDF && !isText) {
+                showAdminMessage('Поддерживаются: изображения (JPG, PNG, GIF, WebP), PDF, Markdown (.md), TXT', 'error');
                 return;
             }
 
-            // Validate file size (max 10MB)
-            if (file.size > 10 * 1024 * 1024) {
-                showAdminMessage('Файл слишком большой. Максимум 10 МБ', 'error');
+            // Validate file size (max 20MB for PDF, 10MB for others)
+            const maxSize = isPDF ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showAdminMessage(`Файл слишком большой. Максимум ${isPDF ? '20' : '10'} МБ`, 'error');
                 return;
             }
 
@@ -2095,9 +2103,12 @@
                     previewImage.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
+            } else if (file.type === 'application/pdf') {
+                // PDF icon
+                previewImage.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="7" y="16" font-size="6" fill="#e53e3e" stroke="none">PDF</text></svg>');
             } else {
-                // PDF icon placeholder
-                previewImage.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>');
+                // Text/Markdown icon
+                previewImage.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>');
             }
 
             preview.style.display = 'flex';
@@ -2116,6 +2127,10 @@
             document.getElementById('previewImage').src = '';
         }
 
+        function updateProcessingText(text) {
+            document.getElementById('processingText').textContent = text;
+        }
+
         async function recognizeDocument(file) {
             const dropZone = document.getElementById('dropZone');
             const dropZoneContent = document.getElementById('dropZoneContent');
@@ -2125,10 +2140,44 @@
             dropZone.classList.add('processing');
             dropZoneContent.style.display = 'none';
             processingIndicator.style.display = 'flex';
+            updateProcessingText('Подготовка файла...');
 
             try {
-                // Convert file to base64
-                const base64 = await fileToBase64(file);
+                let requestBody;
+                const isText = file.name.endsWith('.md') || file.name.endsWith('.txt') || file.type === 'text/plain' || file.type === 'text/markdown';
+                const isPDF = file.type === 'application/pdf';
+
+                if (isText) {
+                    // Текстовые файлы - читаем как текст
+                    updateProcessingText('Анализ текстового документа...');
+                    const textContent = await readFileAsText(file);
+                    requestBody = {
+                        password: adminPassword,
+                        textContent: textContent,
+                        fileType: 'text',
+                        fileName: file.name
+                    };
+                } else if (isPDF) {
+                    // PDF - конвертируем все страницы в изображения
+                    updateProcessingText('Загрузка PDF...');
+                    const images = await convertPdfToImages(file);
+                    updateProcessingText(`Распознавание ${images.length} стр...`);
+                    requestBody = {
+                        password: adminPassword,
+                        images: images,
+                        fileName: file.name
+                    };
+                } else {
+                    // Изображение
+                    updateProcessingText('ИИ распознаёт документ...');
+                    const base64 = await fileToBase64(file);
+                    requestBody = {
+                        password: adminPassword,
+                        image: base64,
+                        mediaType: file.type,
+                        fileName: file.name
+                    };
+                }
 
                 // Call recognition API
                 const response = await fetch('/api/recognize', {
@@ -2136,12 +2185,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        password: adminPassword,
-                        image: base64,
-                        mediaType: file.type,
-                        fileName: file.name
-                    }),
+                    body: JSON.stringify(requestBody),
                 });
 
                 const data = await response.json();
@@ -2183,6 +2227,7 @@
                 dropZone.classList.remove('processing');
                 dropZoneContent.style.display = 'block';
                 processingIndicator.style.display = 'none';
+                updateProcessingText('ИИ распознаёт документ...');
             }
         }
 
@@ -2197,6 +2242,59 @@
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
             });
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        async function convertPdfToImages(file) {
+            // Инициализируем PDF.js
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const numPages = pdf.numPages;
+            const images = [];
+
+            // Рендерим каждую страницу
+            for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+                updateProcessingText(`Обработка страницы ${pageNum}/${numPages}...`);
+
+                const page = await pdf.getPage(pageNum);
+                // Масштаб для хорошего качества OCR
+                const scale = 2;
+                const viewport = page.getViewport({ scale });
+
+                // Создаём canvas для рендеринга
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+
+                // Рендерим страницу
+                await page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise;
+
+                // Конвертируем в base64 PNG
+                const dataUrl = canvas.toDataURL('image/png');
+                const base64 = dataUrl.split(',')[1];
+
+                images.push({
+                    data: base64,
+                    mediaType: 'image/png',
+                    pageNumber: pageNum
+                });
+            }
+
+            return images;
         }
 
         // Initialize drop zone when DOM is ready
