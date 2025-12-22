@@ -77,7 +77,7 @@ async function getEmbedding(text) {
 }
 
 // Hybrid search: combines vector similarity + keyword search + ilike fallback
-async function searchDocuments(query, limit = 8) {
+async function searchDocuments(query, limit = 15) {
   try {
     const embedding = await getEmbedding(query);
     let vectorResults = [];
