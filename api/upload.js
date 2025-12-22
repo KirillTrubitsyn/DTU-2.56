@@ -125,14 +125,28 @@ export default async function handler(req, res) {
     const chunks = splitIntoChunks(content);
     const results = [];
 
+    let failedChunks = [];
+
     for (let i = 0; i < chunks.length; i++) {
       const chunkTitle = chunks.length > 1 ? `${title} (часть ${i + 1})` : title;
       const chunkContent = chunks[i];
 
-      // Получаем embedding
-      const embedding = await getEmbedding(chunkContent);
+      // Получаем embedding с повторными попытками
+      let embedding = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        embedding = await getEmbedding(chunkContent);
+        if (embedding) break;
+        console.log(`[Upload] Embedding attempt ${attempt}/3 failed for chunk ${i + 1}`);
+        await new Promise(r => setTimeout(r, 1000 * attempt)); // Exponential backoff
+      }
 
-      // Вставляем в базу
+      // КРИТИЧНО: Если embedding не получен, документ не будет найден векторным поиском
+      if (!embedding) {
+        console.error(`[Upload] WARNING: No embedding for chunk ${i + 1} of "${title}"`);
+        failedChunks.push(chunkTitle);
+      }
+
+      // Вставляем в базу (даже без embedding - будет найден через ILIKE)
       const { data, error } = await supabase
         .from('documents')
         .insert({
@@ -140,7 +154,7 @@ export default async function handler(req, res) {
           content: chunkContent,
           source: source || title,
           category: category || 'документ',
-          embedding: embedding
+          embedding: embedding // может быть null
         })
         .select('id, title')
         .single();
@@ -150,14 +164,22 @@ export default async function handler(req, res) {
         throw error;
       }
 
+      console.log(`[Upload] Saved chunk ${i + 1}/${chunks.length}: "${chunkTitle}" (embedding: ${embedding ? 'yes' : 'NO'})`);
       results.push(data);
     }
 
-    return res.status(200).json({
+    // Формируем ответ с предупреждением если были проблемы с embedding
+    const response = {
       success: true,
       message: `Загружено ${results.length} документ(ов)`,
       documents: results
-    });
+    };
+
+    if (failedChunks.length > 0) {
+      response.warning = `${failedChunks.length} документ(ов) загружены БЕЗ embedding (векторный поиск не найдёт, но ILIKE найдёт): ${failedChunks.join(', ')}`;
+    }
+
+    return res.status(200).json(response);
 
   } catch (error) {
     console.error('Upload error:', error);
