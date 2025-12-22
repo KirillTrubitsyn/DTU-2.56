@@ -4,8 +4,8 @@
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   index.html    │────▶│  Vercel API     │────▶│    Claude API   │
-│   (UI чата)     │     │  /api/chat.js   │     │   (Anthropic)   │
+│   index.html    │────▶│  Vercel API     │────▶│  Google Gemini  │
+│   (UI чата)     │     │  /api/chat.js   │     │   2.5 Pro       │
 └─────────────────┘     └────────┬────────┘     └─────────────────┘
                                  │
                                  ▼
@@ -13,7 +13,6 @@
                         │    Supabase     │
                         │  • pgvector     │
                         │  • documents    │
-                        │  • Edge Func    │
                         └─────────────────┘
 ```
 
@@ -37,48 +36,23 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 Скопируйте содержимое файла `supabase/schema.sql` и выполните в SQL Editor.
 
-### 1.4 (Опционально) Настройте Edge Function
+**Важно:** Размерность вектора в схеме указана как 1536. Если используете Google Embeddings (text-embedding-004), измените на 768:
 
-Если хотите генерировать embeddings через Supabase:
-
-```bash
-# Установите Supabase CLI
-npm install -g supabase
-
-# Войдите в аккаунт
-supabase login
-
-# Свяжите с проектом
-supabase link --project-ref YOUR_PROJECT_REF
-
-# Разверните функцию
-supabase functions deploy embed
-
-# Добавьте секреты
-supabase secrets set VOYAGE_API_KEY=your-key
-# или
-supabase secrets set OPENAI_API_KEY=your-key
+```sql
+-- Замените в schema.sql:
+embedding vector(768)  -- вместо vector(1536)
 ```
 
-## Шаг 2: Получите API ключи
+## Шаг 2: Получите Google API ключ
 
-### Claude API (Anthropic)
+### Google AI Studio (Gemini)
 
-1. Зайдите на [console.anthropic.com](https://console.anthropic.com)
-2. Создайте API ключ в разделе API Keys
-3. Сохраните ключ (начинается с `sk-ant-api03-`)
+1. Зайдите на [aistudio.google.com](https://aistudio.google.com)
+2. Нажмите **Get API Key** → **Create API key**
+3. Выберите проект или создайте новый
+4. Скопируйте ключ (начинается с `AIza...`)
 
-### Voyage AI (для embeddings, рекомендуется)
-
-1. Зайдите на [dash.voyageai.com](https://dash.voyageai.com)
-2. Создайте API ключ
-3. Модель `voyage-multilingual-2` лучше работает с русским текстом
-
-### Или OpenAI (альтернатива)
-
-1. Зайдите на [platform.openai.com](https://platform.openai.com)
-2. Создайте API ключ
-3. Модель `text-embedding-3-small` дешевле и быстрее
+**Бесплатный лимит:** 60 запросов в минуту для Gemini 2.5 Pro
 
 ## Шаг 3: Настройка Vercel
 
@@ -100,10 +74,9 @@ vercel
 
 | Переменная | Значение |
 |-----------|----------|
-| `ANTHROPIC_API_KEY` | sk-ant-api03-... |
+| `GOOGLE_API_KEY` | AIza... |
 | `SUPABASE_URL` | https://xxx.supabase.co |
 | `SUPABASE_ANON_KEY` | eyJhbGc... |
-| `VOYAGE_API_KEY` | pa-... (или OPENAI_API_KEY) |
 
 ### 3.3 Повторите деплой
 
@@ -156,35 +129,42 @@ DTU-2.56/
 ├── vercel.json             # Конфигурация Vercel
 ├── .env.example            # Пример переменных окружения
 ├── api/
-│   └── chat.js             # API route для чата (Vercel Serverless)
+│   └── chat.js             # API route для чата (Google Gemini)
 ├── supabase/
 │   ├── schema.sql          # SQL схема для базы данных
 │   └── functions/
 │       └── embed/
-│           └── index.ts    # Edge Function для embeddings
+│           └── index.ts    # Edge Function для embeddings (опционально)
 └── scripts/
     └── upload-documents.js # Скрипт загрузки документов
 ```
+
+## Используемые модели Google
+
+| Модель | Назначение |
+|--------|-----------|
+| `gemini-2.5-pro-preview-06-05` | Генерация ответов (основная) |
+| `text-embedding-004` | Создание embeddings для RAG |
 
 ## Troubleshooting
 
 ### Чат не отвечает
 
 1. Проверьте консоль браузера (F12 → Console)
-2. Убедитесь, что все переменные окружения заданы в Vercel
+2. Убедитесь, что `GOOGLE_API_KEY` задан в Vercel
 3. Проверьте логи в Vercel Dashboard → Functions
 
-### Embeddings не работают
+### Ошибка "API key not valid"
 
-1. Убедитесь, что VOYAGE_API_KEY или OPENAI_API_KEY задан
-2. Проверьте, что Edge Function развёрнута (если используете)
-3. Попробуйте fallback на текстовый поиск (работает без embeddings)
+1. Проверьте, что API ключ скопирован полностью
+2. Убедитесь, что Gemini API включён в вашем Google Cloud проекте
+3. Проверьте квоты на [console.cloud.google.com](https://console.cloud.google.com)
 
 ### Документы не находятся
 
 1. Проверьте, что документы загружены: Supabase → Table Editor → documents
 2. Убедитесь, что embeddings сгенерированы (колонка embedding не NULL)
-3. Проверьте, что функция `match_documents` создана
+3. Проверьте размерность вектора (должна быть 768 для Google)
 
 ## Добавление новых документов
 
@@ -193,7 +173,7 @@ DTU-2.56/
 1. Откройте Supabase → Table Editor → documents
 2. Нажмите Insert Row
 3. Заполните title, content, source, category
-4. Embedding будет сгенерирован автоматически при следующем запросе (или вручную)
+4. Embedding будет сгенерирован автоматически при следующем запросе
 
 ### Через скрипт
 
@@ -202,6 +182,16 @@ DTU-2.56/
 ```bash
 node scripts/upload-documents.js
 ```
+
+## Стоимость
+
+### Google Gemini 2.5 Pro
+- **Бесплатно:** 60 RPM, 1500 RPD
+- **Платно:** $1.25 / 1M input tokens, $10 / 1M output tokens
+
+### Supabase
+- **Бесплатно:** 500MB база данных, 50MB file storage
+- **Pro:** $25/месяц
 
 ## Контакты
 

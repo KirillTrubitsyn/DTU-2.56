@@ -3,20 +3,21 @@
  *
  * Использование:
  * 1. Установите переменные окружения:
- *    SUPABASE_URL, SUPABASE_SERVICE_KEY, VOYAGE_API_KEY (или OPENAI_API_KEY)
+ *    SUPABASE_URL, SUPABASE_SERVICE_KEY, GOOGLE_API_KEY
  *
  * 2. Запустите: node scripts/upload-documents.js
  */
 
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
 
 // Конфигурация
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-const VOYAGE_API_KEY = process.env.VOYAGE_API_KEY;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 
 // Документы для загрузки
 const DOCUMENTS = [
@@ -211,46 +212,26 @@ const DOCUMENTS = [
   }
 ];
 
-// Функция для получения embedding
+// Функция для получения embedding через Google
 async function getEmbedding(text) {
-  if (VOYAGE_API_KEY) {
-    const response = await fetch('https://api.voyageai.com/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${VOYAGE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'voyage-multilingual-2',
-        input: text,
-      }),
-    });
-    const data = await response.json();
-    return data.data[0].embedding;
-  }
-
-  if (OPENAI_API_KEY) {
-    const response = await fetch('https://api.openai.com/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'text-embedding-3-small',
-        input: text,
-      }),
-    });
-    const data = await response.json();
-    return data.data[0].embedding;
-  }
-
-  throw new Error('No embedding API key configured');
+  const embeddingModel = genAI.getGenerativeModel({ model: 'text-embedding-004' });
+  const result = await embeddingModel.embedContent(text);
+  return result.embedding.values;
 }
 
 // Основная функция загрузки
 async function uploadDocuments() {
   console.log('🚀 Начинаю загрузку документов...\n');
+
+  if (!GOOGLE_API_KEY) {
+    console.error('❌ GOOGLE_API_KEY не задан!');
+    process.exit(1);
+  }
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    console.error('❌ SUPABASE_URL или SUPABASE_SERVICE_KEY не заданы!');
+    process.exit(1);
+  }
 
   for (const doc of DOCUMENTS) {
     try {
@@ -275,6 +256,9 @@ async function uploadDocuments() {
 
       if (error) throw error;
       console.log(`   ✅ Загружено в Supabase\n`);
+
+      // Небольшая задержка чтобы не превысить лимиты API
+      await new Promise(resolve => setTimeout(resolve, 500));
 
     } catch (error) {
       console.error(`   ❌ Ошибка: ${error.message}\n`);

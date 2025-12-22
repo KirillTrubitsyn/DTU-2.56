@@ -1,10 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize clients
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -36,19 +34,25 @@ const SYSTEM_PROMPT = `Ты — юридический ИИ-помощник, с
 - Если не знаешь точного ответа — скажи об этом честно
 - Будь кратким, но информативным`;
 
-// Function to get embeddings using Voyage AI via Supabase
+// Function to get embeddings using Google or Supabase
 async function getEmbedding(text) {
   try {
-    // Call Supabase Edge Function for embeddings
-    const { data, error } = await supabase.functions.invoke('embed', {
-      body: { text }
-    });
-
-    if (error) throw error;
-    return data.embedding;
+    // Use Google's embedding model
+    const embeddingModel = genAI.getGenerativeModel({ model: 'text-embedding-004' });
+    const result = await embeddingModel.embedContent(text);
+    return result.embedding.values;
   } catch (error) {
     console.error('Embedding error:', error);
-    return null;
+    // Fallback to Supabase Edge Function
+    try {
+      const { data, error: sbError } = await supabase.functions.invoke('embed', {
+        body: { text }
+      });
+      if (sbError) throw sbError;
+      return data.embedding;
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -97,6 +101,14 @@ function formatContext(documents) {
   return `\n\nРЕЛЕВАНТНЫЕ ДОКУМЕНТЫ ИЗ БАЗЫ:\n${context}`;
 }
 
+// Convert history to Gemini format
+function convertHistoryToGemini(history) {
+  return history.map(msg => ({
+    role: msg.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: msg.content }]
+  }));
+}
+
 // Main handler
 export default async function handler(req, res) {
   // CORS headers
@@ -123,31 +135,21 @@ export default async function handler(req, res) {
     const documents = await searchDocuments(message);
     const contextAddition = formatContext(documents);
 
-    // Build conversation messages
-    const messages = [
-      ...history.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      })),
-      {
-        role: 'user',
-        content: message + contextAddition
-      }
-    ];
-
-    // Call Claude API
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: messages
+    // Initialize Gemini model with system instruction
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-3-flash-preview',
+      systemInstruction: SYSTEM_PROMPT,
     });
 
-    // Extract text response
-    const assistantMessage = response.content
-      .filter(block => block.type === 'text')
-      .map(block => block.text)
-      .join('\n');
+    // Start chat with history
+    const chat = model.startChat({
+      history: convertHistoryToGemini(history),
+    });
+
+    // Send message with context
+    const result = await chat.sendMessage(message + contextAddition);
+    const response = await result.response;
+    const assistantMessage = response.text();
 
     // Return response with sources
     return res.status(200).json({
@@ -158,7 +160,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Chat API error:', error);
 
-    if (error.status === 401) {
+    if (error.message?.includes('API_KEY')) {
       return res.status(500).json({ error: 'Invalid API key configuration' });
     }
 
