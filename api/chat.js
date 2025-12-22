@@ -76,33 +76,29 @@ async function getEmbedding(text) {
   }
 }
 
-// Hybrid search: combines vector similarity + keyword search + ilike fallback
-async function searchDocuments(query, limit = 15) {
+// Hybrid search: combines vector similarity + keyword search + fallback
+async function searchDocuments(query, limit = 8) {
   try {
     const embedding = await getEmbedding(query);
     let vectorResults = [];
     let keywordResults = [];
-    let ilikeResults = [];
-
-    console.log(`[Search] Query: "${query}"`);
-    console.log(`[Search] Embedding generated: ${embedding ? 'yes' : 'NO'}`);
+    let fallbackResults = [];
 
     // 1. Vector similarity search (if embedding available)
     if (embedding) {
       const { data, error } = await supabase.rpc('match_documents', {
         query_embedding: embedding,
-        match_threshold: 0.3,  // Lowered from 0.5 for much better recall
+        match_threshold: 0.3,  // Lowered to 0.3 for better recall
         match_count: limit
       });
-      if (error) {
-        console.error('[Search] Vector search error:', error.message);
-      } else if (data) {
+      if (!error && data) {
         vectorResults = data;
-        console.log(`[Search] Vector results: ${data.length} docs (similarities: ${data.map(d => d.similarity?.toFixed(2)).join(', ')})`);
+      } else if (error) {
+        console.log('Vector search error:', error.message);
       }
     }
 
-    // 2. Full-text search (textSearch with russian config)
+    // 2. Keyword search (full-text search)
     try {
       const { data, error } = await supabase
         .from('documents')
@@ -110,103 +106,46 @@ async function searchDocuments(query, limit = 15) {
         .textSearch('content', query, { type: 'websearch', config: 'russian' })
         .limit(limit);
 
-      if (error) {
-        console.log('[Search] Full-text search error:', error.message);
-      } else if (data) {
+      if (!error && data) {
         keywordResults = data;
-        console.log(`[Search] Full-text results: ${data.length} docs`);
       }
     } catch (e) {
-      console.log('[Search] Full-text search failed:', e.message);
+      console.log('Keyword search failed:', e.message);
     }
 
-    // 3. ILIKE fallback search - searches for key words in title and content
-    // This is crucial for Russian language where full-text search may fail
-    try {
-      // Extract key words from query
-      const words = query.split(/\s+/);
-
-      // Get meaningful words (longer than 3 chars OR contain digits - for document numbers)
-      const keyWords = words
-        .map(w => w.toLowerCase().replace(/[«»"']/g, '')) // Remove quotes
-        .filter(word => word.length > 3 || /\d/.test(word)) // Keep long words OR words with digits
-        .slice(0, 5); // Take up to 5 key words
-
-      // Also extract document numbers/dates (patterns like 037_2023, 21.02.2023, №123)
-      const docNumbers = query.match(/№?\d+[_\-\/\.]\d+|\d{2}\.\d{2}\.\d{4}|№\s*\d+/g) || [];
-
-      // Combine all search terms
-      const allTerms = [...new Set([...keyWords, ...docNumbers])];
-
-      console.log(`[Search] ILIKE terms: ${allTerms.join(', ')}`);
-
-      if (allTerms.length > 0) {
-        // Search for documents containing any of the terms
-        const ilikeQueries = allTerms.map(term => `%${term}%`);
-
-        // Search in title first
-        const { data: titleData, error: titleError } = await supabase
+    // 3. Fallback: simple ILIKE search if both above return nothing
+    if (vectorResults.length === 0 && keywordResults.length === 0) {
+      const searchTerms = query.split(' ').filter(t => t.length > 3).slice(0, 3);
+      for (const term of searchTerms) {
+        const { data, error } = await supabase
           .from('documents')
           .select('id, title, content, source')
-          .or(ilikeQueries.map(q => `title.ilike.${q}`).join(','))
+          .or(`title.ilike.%${term}%,content.ilike.%${term}%`)
           .limit(limit);
 
-        if (!titleError && titleData) {
-          ilikeResults = titleData;
-          console.log(`[Search] ILIKE title results: ${titleData.length} docs`);
-        }
-
-        // If no title matches, search in content
-        if (ilikeResults.length === 0) {
-          const { data: contentData, error: contentError } = await supabase
-            .from('documents')
-            .select('id, title, content, source')
-            .or(ilikeQueries.map(q => `content.ilike.${q}`).join(','))
-            .limit(limit);
-
-          if (!contentError && contentData) {
-            ilikeResults = contentData;
-            console.log(`[Search] ILIKE content results: ${contentData.length} docs`);
-          }
+        if (!error && data && data.length > 0) {
+          fallbackResults = data;
+          break;
         }
       }
-    } catch (e) {
-      console.log('[Search] ILIKE search failed:', e.message);
     }
 
-    // 4. Merge results (vector first, then keyword, then ilike, deduplicated)
+    // 4. Merge results (vector first, then keyword, then fallback)
     const seenIds = new Set();
     const merged = [];
 
-    // Add vector results first (highest priority - semantic match)
-    for (const doc of vectorResults) {
+    for (const doc of [...vectorResults, ...keywordResults, ...fallbackResults]) {
       if (!seenIds.has(doc.id)) {
         seenIds.add(doc.id);
         merged.push(doc);
       }
     }
 
-    // Add keyword results (medium priority - full-text match)
-    for (const doc of keywordResults) {
-      if (!seenIds.has(doc.id)) {
-        seenIds.add(doc.id);
-        merged.push(doc);
-      }
-    }
-
-    // Add ilike results (fallback - substring match)
-    for (const doc of ilikeResults) {
-      if (!seenIds.has(doc.id)) {
-        seenIds.add(doc.id);
-        merged.push(doc);
-      }
-    }
-
-    console.log(`[Search] TOTAL: ${vectorResults.length} vector + ${keywordResults.length} fulltext + ${ilikeResults.length} ilike = ${merged.length} merged`);
+    console.log(`Search: ${vectorResults.length} vector + ${keywordResults.length} keyword + ${fallbackResults.length} fallback = ${merged.length} total`);
 
     return merged.slice(0, limit);
   } catch (error) {
-    console.error('[Search] Critical error:', error);
+    console.error('Search error:', error);
     return [];
   }
 }
