@@ -76,26 +76,33 @@ async function getEmbedding(text) {
   }
 }
 
-// Hybrid search: combines vector similarity + keyword search
+// Hybrid search: combines vector similarity + keyword search + ilike fallback
 async function searchDocuments(query, limit = 8) {
   try {
     const embedding = await getEmbedding(query);
     let vectorResults = [];
     let keywordResults = [];
+    let ilikeResults = [];
+
+    console.log(`[Search] Query: "${query}"`);
+    console.log(`[Search] Embedding generated: ${embedding ? 'yes' : 'NO'}`);
 
     // 1. Vector similarity search (if embedding available)
     if (embedding) {
       const { data, error } = await supabase.rpc('match_documents', {
         query_embedding: embedding,
-        match_threshold: 0.5,  // Lowered from 0.7 for better recall
+        match_threshold: 0.3,  // Lowered from 0.5 for much better recall
         match_count: limit
       });
-      if (!error && data) {
+      if (error) {
+        console.error('[Search] Vector search error:', error.message);
+      } else if (data) {
         vectorResults = data;
+        console.log(`[Search] Vector results: ${data.length} docs (similarities: ${data.map(d => d.similarity?.toFixed(2)).join(', ')})`);
       }
     }
 
-    // 2. Keyword search (always run as supplement)
+    // 2. Full-text search (textSearch with russian config)
     try {
       const { data, error } = await supabase
         .from('documents')
@@ -103,19 +110,65 @@ async function searchDocuments(query, limit = 8) {
         .textSearch('content', query, { type: 'websearch', config: 'russian' })
         .limit(limit);
 
-      if (!error && data) {
+      if (error) {
+        console.log('[Search] Full-text search error:', error.message);
+      } else if (data) {
         keywordResults = data;
+        console.log(`[Search] Full-text results: ${data.length} docs`);
       }
     } catch (e) {
-      // Keyword search failed, continue with vector results only
-      console.log('Keyword search failed:', e.message);
+      console.log('[Search] Full-text search failed:', e.message);
     }
 
-    // 3. Merge results (vector first, then keyword, deduplicated)
+    // 3. ILIKE fallback search - searches for key words in title and content
+    // This is crucial for Russian language where full-text search may fail
+    try {
+      // Extract key words from query (words longer than 3 chars)
+      const keyWords = query
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(word => word.length > 3)
+        .slice(0, 3); // Take up to 3 key words
+
+      if (keyWords.length > 0) {
+        // Search for documents containing any of the key words
+        const ilikeQueries = keyWords.map(word => `%${word}%`);
+
+        // Search in title first
+        const { data: titleData, error: titleError } = await supabase
+          .from('documents')
+          .select('id, title, content, source')
+          .or(ilikeQueries.map(q => `title.ilike.${q}`).join(','))
+          .limit(limit);
+
+        if (!titleError && titleData) {
+          ilikeResults = titleData;
+          console.log(`[Search] ILIKE title results: ${titleData.length} docs`);
+        }
+
+        // If no title matches, search in content
+        if (ilikeResults.length === 0) {
+          const { data: contentData, error: contentError } = await supabase
+            .from('documents')
+            .select('id, title, content, source')
+            .or(ilikeQueries.map(q => `content.ilike.${q}`).join(','))
+            .limit(limit);
+
+          if (!contentError && contentData) {
+            ilikeResults = contentData;
+            console.log(`[Search] ILIKE content results: ${contentData.length} docs`);
+          }
+        }
+      }
+    } catch (e) {
+      console.log('[Search] ILIKE search failed:', e.message);
+    }
+
+    // 4. Merge results (vector first, then keyword, then ilike, deduplicated)
     const seenIds = new Set();
     const merged = [];
 
-    // Add vector results first (higher priority)
+    // Add vector results first (highest priority - semantic match)
     for (const doc of vectorResults) {
       if (!seenIds.has(doc.id)) {
         seenIds.add(doc.id);
@@ -123,7 +176,7 @@ async function searchDocuments(query, limit = 8) {
       }
     }
 
-    // Add keyword results that weren't in vector results
+    // Add keyword results (medium priority - full-text match)
     for (const doc of keywordResults) {
       if (!seenIds.has(doc.id)) {
         seenIds.add(doc.id);
@@ -131,11 +184,19 @@ async function searchDocuments(query, limit = 8) {
       }
     }
 
-    console.log(`Search results: ${vectorResults.length} vector + ${keywordResults.length} keyword = ${merged.length} merged`);
+    // Add ilike results (fallback - substring match)
+    for (const doc of ilikeResults) {
+      if (!seenIds.has(doc.id)) {
+        seenIds.add(doc.id);
+        merged.push(doc);
+      }
+    }
+
+    console.log(`[Search] TOTAL: ${vectorResults.length} vector + ${keywordResults.length} fulltext + ${ilikeResults.length} ilike = ${merged.length} merged`);
 
     return merged.slice(0, limit);
   } catch (error) {
-    console.error('Search error:', error);
+    console.error('[Search] Critical error:', error);
     return [];
   }
 }
