@@ -31,6 +31,11 @@
     <!-- Mammoth.js для чтения DOCX файлов -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
+    <!-- docx.js для создания DOCX файлов -->
+    <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+    <!-- FileSaver.js для скачивания файлов -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
     <style>
         :root {
             --primary: #1a365d;
@@ -2568,6 +2573,7 @@
                     <div class="saved-card-header">
                         <span class="saved-card-date">${item.timestamp}</span>
                         <div class="saved-card-actions">
+                            <button class="saved-card-btn" onclick="exportToDocx(${realIndex})" title="Экспорт в DOCX">📄</button>
                             <button class="saved-card-btn" onclick="copySaved(${realIndex})" title="Копировать">📋</button>
                             <button class="saved-card-btn delete" onclick="deleteSaved(${realIndex})" title="Удалить">🗑️</button>
                         </div>
@@ -2602,6 +2608,186 @@
                 updateSavedBadge();
                 renderSavedResponses();
             }
+        }
+
+        // Экспорт в DOCX
+        async function exportToDocx(index) {
+            const item = savedResponses[index];
+            if (!item) return;
+
+            // Убираем источники из контента
+            let content = item.content;
+            // Удаляем блок источников (если есть в тексте)
+            content = content.replace(/\n*=== ДОКУМЕНТЫ ИЗ БАЗЫ ЗНАНИЙ[\s\S]*?=== КОНЕЦ ДОКУМЕНТОВ ===/g, '');
+            content = content.replace(/\n*\[ДОКУМЕНТЫ ИЗ БАЗЫ ЗНАНИЙ:.*?\]/g, '');
+
+            const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = docx;
+
+            // Парсим контент в параграфы
+            const paragraphs = [];
+
+            // Заголовок документа
+            paragraphs.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: 'Юридическая справка',
+                            bold: true,
+                            size: 32,
+                            color: '1a365d'
+                        })
+                    ],
+                    heading: HeadingLevel.HEADING_1,
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 300 }
+                })
+            );
+
+            // Дело и дата
+            paragraphs.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: `Дело № А73-19604/2025 • ${item.timestamp}`,
+                            italics: true,
+                            size: 20,
+                            color: '666666'
+                        })
+                    ],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 400 }
+                })
+            );
+
+            // Разделитель
+            paragraphs.push(
+                new Paragraph({
+                    children: [new TextRun({ text: '─'.repeat(50), color: 'cccccc' })],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 300 }
+                })
+            );
+
+            // Разбиваем контент на строки и форматируем
+            const lines = content.split('\n');
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) {
+                    paragraphs.push(new Paragraph({ spacing: { after: 100 } }));
+                    continue;
+                }
+
+                // Заголовки (## или ###)
+                if (trimmed.startsWith('### ')) {
+                    paragraphs.push(new Paragraph({
+                        children: [new TextRun({ text: trimmed.slice(4), bold: true, size: 24 })],
+                        heading: HeadingLevel.HEADING_3,
+                        spacing: { before: 200, after: 100 }
+                    }));
+                } else if (trimmed.startsWith('## ')) {
+                    paragraphs.push(new Paragraph({
+                        children: [new TextRun({ text: trimmed.slice(3), bold: true, size: 26 })],
+                        heading: HeadingLevel.HEADING_2,
+                        spacing: { before: 200, after: 100 }
+                    }));
+                }
+                // Списки (* или -)
+                else if (trimmed.match(/^[\*\-•] /)) {
+                    const text = trimmed.replace(/^[\*\-•] /, '');
+                    paragraphs.push(new Paragraph({
+                        children: [
+                            new TextRun({ text: '• ', bold: true, color: '1a365d' }),
+                            ...parseInlineFormatting(text)
+                        ],
+                        indent: { left: 400 },
+                        spacing: { after: 80 }
+                    }));
+                }
+                // Нумерованные списки
+                else if (trimmed.match(/^\d+\. /)) {
+                    const match = trimmed.match(/^(\d+)\. (.*)$/);
+                    if (match) {
+                        paragraphs.push(new Paragraph({
+                            children: [
+                                new TextRun({ text: `${match[1]}. `, bold: true, color: '1a365d' }),
+                                ...parseInlineFormatting(match[2])
+                            ],
+                            indent: { left: 400 },
+                            spacing: { after: 80 }
+                        }));
+                    }
+                }
+                // Обычный текст
+                else {
+                    paragraphs.push(new Paragraph({
+                        children: parseInlineFormatting(trimmed),
+                        spacing: { after: 120 }
+                    }));
+                }
+            }
+
+            // Футер
+            paragraphs.push(
+                new Paragraph({
+                    children: [new TextRun({ text: '─'.repeat(50), color: 'cccccc' })],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { before: 400, after: 200 }
+                })
+            );
+            paragraphs.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: 'Документ сформирован ИИ-помощником ДТУ • Разработчик: Кирилл Трубицын',
+                            italics: true,
+                            size: 18,
+                            color: '999999'
+                        })
+                    ],
+                    alignment: AlignmentType.CENTER
+                })
+            );
+
+            // Создаём документ
+            const doc = new Document({
+                sections: [{
+                    properties: {
+                        page: {
+                            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }
+                        }
+                    },
+                    children: paragraphs
+                }]
+            });
+
+            // Генерируем и скачиваем
+            const blob = await Packer.toBlob(doc);
+            const filename = `DTU_справка_${new Date().toISOString().slice(0,10)}.docx`;
+            saveAs(blob, filename);
+        }
+
+        // Парсинг inline форматирования (**bold**, *italic*)
+        function parseInlineFormatting(text) {
+            const runs = [];
+            // Паттерн для **bold** и *italic*
+            const regex = /(\*\*(.+?)\*\*|\*([^*]+)\*|([^*]+))/g;
+            let match;
+
+            while ((match = regex.exec(text)) !== null) {
+                if (match[2]) {
+                    // **bold**
+                    runs.push(new docx.TextRun({ text: match[2], bold: true }));
+                } else if (match[3]) {
+                    // *italic*
+                    runs.push(new docx.TextRun({ text: match[3], italics: true }));
+                } else if (match[4]) {
+                    // plain text
+                    runs.push(new docx.TextRun({ text: match[4] }));
+                }
+            }
+
+            return runs.length > 0 ? runs : [new docx.TextRun({ text })];
         }
 
         function formatMessage(content) {
