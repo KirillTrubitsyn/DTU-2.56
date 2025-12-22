@@ -31,6 +31,11 @@
     <!-- Mammoth.js для чтения DOCX файлов -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
+    <!-- docx.js для создания DOCX файлов -->
+    <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+    <!-- FileSaver.js для скачивания файлов -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
     <style>
         :root {
             --primary: #1a365d;
@@ -2129,6 +2134,7 @@
     <footer class="footer">
         <p>Дело № А73-19604/2025 • АО «Дальтрансуголь» • Приамурское МУ Росприроднадзора</p>
         <p style="margin-top: 0.5rem;">Потенциальное снижение: до полного отказа (линии 1-2) | минус 2 047 545 642 ₽ (линия 3)</p>
+        <p style="margin-top: 0.5rem; opacity: 0.7; font-size: 0.85em;">Разработчик: Кирилл Трубицын</p>
     </footer>
 
     <!-- Admin Button -->
@@ -2488,7 +2494,7 @@
         // Saved responses storage
         let savedResponses = JSON.parse(localStorage.getItem('savedResponses') || '[]');
 
-        function addMessage(content, role) {
+        function addMessage(content, role, sourcesHtml = '') {
             const messagesContainer = document.getElementById('chatMessages');
 
             // Remove welcome message on first message
@@ -2502,7 +2508,8 @@
 
             const messageDiv = document.createElement('div');
             messageDiv.className = `chat-message ${role}`;
-            messageDiv.innerHTML = formatMessage(content);
+            // Format message first, then append sources HTML (which bypasses escaping)
+            messageDiv.innerHTML = formatMessage(content) + sourcesHtml;
             wrapper.appendChild(messageDiv);
 
             // Add save button for assistant messages
@@ -2566,6 +2573,7 @@
                     <div class="saved-card-header">
                         <span class="saved-card-date">${item.timestamp}</span>
                         <div class="saved-card-actions">
+                            <button class="saved-card-btn" onclick="exportToDocx(${realIndex})" title="Экспорт в DOCX">📄</button>
                             <button class="saved-card-btn" onclick="copySaved(${realIndex})" title="Копировать">📋</button>
                             <button class="saved-card-btn delete" onclick="deleteSaved(${realIndex})" title="Удалить">🗑️</button>
                         </div>
@@ -2600,6 +2608,167 @@
                 updateSavedBadge();
                 renderSavedResponses();
             }
+        }
+
+        // Экспорт в DOCX
+        async function exportToDocx(index) {
+            const item = savedResponses[index];
+            if (!item) return;
+
+            // Убираем источники из контента
+            let content = item.content;
+            // Удаляем блок источников (если есть в тексте)
+            content = content.replace(/\n*=== ДОКУМЕНТЫ ИЗ БАЗЫ ЗНАНИЙ[\s\S]*?=== КОНЕЦ ДОКУМЕНТОВ ===/g, '');
+            content = content.replace(/\n*\[ДОКУМЕНТЫ ИЗ БАЗЫ ЗНАНИЙ:.*?\]/g, '');
+
+            const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = docx;
+
+            // Парсим контент в параграфы
+            const paragraphs = [];
+
+            // Заголовок документа
+            paragraphs.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: 'Юридическая справка',
+                            bold: true,
+                            size: 40,  // 20pt
+                            color: '1a365d'
+                        })
+                    ],
+                    heading: HeadingLevel.HEADING_1,
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 300 }
+                })
+            );
+
+            // Дело и дата
+            paragraphs.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: `Дело № А73-19604/2025 • ${item.timestamp}`,
+                            italics: true,
+                            size: 22,  // 11pt
+                            color: '666666'
+                        })
+                    ],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 400 }
+                })
+            );
+
+            // Разделитель
+            paragraphs.push(
+                new Paragraph({
+                    children: [new TextRun({ text: '─'.repeat(60), color: 'cccccc', size: 22 })],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 300 }
+                })
+            );
+
+            // Разбиваем контент на строки и форматируем
+            const lines = content.split('\n');
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) {
+                    paragraphs.push(new Paragraph({ spacing: { after: 100 } }));
+                    continue;
+                }
+
+                // Заголовки (## или ###)
+                if (trimmed.startsWith('### ')) {
+                    paragraphs.push(new Paragraph({
+                        children: [new TextRun({ text: trimmed.slice(4), bold: true, size: 28 })],  // 14pt
+                        heading: HeadingLevel.HEADING_3,
+                        spacing: { before: 200, after: 100 }
+                    }));
+                } else if (trimmed.startsWith('## ')) {
+                    paragraphs.push(new Paragraph({
+                        children: [new TextRun({ text: trimmed.slice(3), bold: true, size: 28 })],  // 14pt
+                        heading: HeadingLevel.HEADING_2,
+                        spacing: { before: 200, after: 100 }
+                    }));
+                }
+                // Списки (* или -)
+                else if (trimmed.match(/^[\*\-•] /)) {
+                    const text = trimmed.replace(/^[\*\-•] /, '');
+                    paragraphs.push(new Paragraph({
+                        children: [
+                            new TextRun({ text: '• ', bold: true, color: '1a365d', size: 22 }),
+                            ...parseInlineFormatting(text, 22)
+                        ],
+                        indent: { left: 400 },
+                        alignment: AlignmentType.JUSTIFIED,
+                        spacing: { after: 80 }
+                    }));
+                }
+                // Нумерованные списки
+                else if (trimmed.match(/^\d+\. /)) {
+                    const match = trimmed.match(/^(\d+)\. (.*)$/);
+                    if (match) {
+                        paragraphs.push(new Paragraph({
+                            children: [
+                                new TextRun({ text: `${match[1]}. `, bold: true, color: '1a365d', size: 22 }),
+                                ...parseInlineFormatting(match[2], 22)
+                            ],
+                            indent: { left: 400 },
+                            alignment: AlignmentType.JUSTIFIED,
+                            spacing: { after: 80 }
+                        }));
+                    }
+                }
+                // Обычный текст
+                else {
+                    paragraphs.push(new Paragraph({
+                        children: parseInlineFormatting(trimmed, 22),
+                        alignment: AlignmentType.JUSTIFIED,
+                        spacing: { after: 120 }
+                    }));
+                }
+            }
+
+            // Создаём документ
+            const doc = new Document({
+                sections: [{
+                    properties: {
+                        page: {
+                            margin: { top: 1440, right: 1000, bottom: 1440, left: 1440 }
+                        }
+                    },
+                    children: paragraphs
+                }]
+            });
+
+            // Генерируем и скачиваем
+            const blob = await Packer.toBlob(doc);
+            const filename = `DTU_справка_${new Date().toISOString().slice(0,10)}.docx`;
+            saveAs(blob, filename);
+        }
+
+        // Парсинг inline форматирования (**bold**, *italic*)
+        function parseInlineFormatting(text, fontSize = 22) {
+            const runs = [];
+            // Паттерн для **bold** и *italic*
+            const regex = /(\*\*(.+?)\*\*|\*([^*]+)\*|([^*]+))/g;
+            let match;
+
+            while ((match = regex.exec(text)) !== null) {
+                if (match[2]) {
+                    // **bold**
+                    runs.push(new docx.TextRun({ text: match[2], bold: true, size: fontSize }));
+                } else if (match[3]) {
+                    // *italic*
+                    runs.push(new docx.TextRun({ text: match[3], italics: true, size: fontSize }));
+                } else if (match[4]) {
+                    // plain text
+                    runs.push(new docx.TextRun({ text: match[4], size: fontSize }));
+                }
+            }
+
+            return runs.length > 0 ? runs : [new docx.TextRun({ text, size: fontSize })];
         }
 
         function formatMessage(content) {
@@ -2718,15 +2887,14 @@
 
                 let responseContent = data.response;
 
-                // Add sources info
+                // Build sources HTML (will be appended after markdown formatting)
+                let sourcesHtml = '';
                 if (data.sources && data.sources.length > 0) {
                     const sourcesList = data.sources.map(s => `<li>${s}</li>`).join('');
-                    responseContent += `\n\n<div class="sources"><strong>📚 Использованы документы из базы знаний:</strong><ul>${sourcesList}</ul></div>`;
-                } else {
-                    responseContent += `\n\n<div class="sources no-sources"><strong>⚠️ Документы из базы знаний не найдены</strong><br>Ответ основан на общих знаниях модели</div>`;
+                    sourcesHtml = `<div class="sources"><strong>📚 Использованы документы из базы знаний:</strong><ul>${sourcesList}</ul></div>`;
                 }
 
-                addMessage(responseContent, 'assistant');
+                addMessage(responseContent, 'assistant', sourcesHtml);
                 conversationHistory.push({ role: 'assistant', content: data.response });
 
             } catch (error) {
