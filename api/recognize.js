@@ -1,8 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Braesecke1973';
 
@@ -154,10 +152,6 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Recognition error:', error);
 
-    if (error.status === 401) {
-      return res.status(500).json({ error: 'Ошибка API ключа' });
-    }
-
     return res.status(500).json({
       error: 'Ошибка распознавания документа',
       details: error.message,
@@ -167,85 +161,59 @@ export default async function handler(req, res) {
 
 // Обработка одиночного изображения
 async function processSingleImage(image, mediaType, fileName) {
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 4096,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: mediaType || 'image/jpeg',
-              data: image,
-            },
-          },
-          {
-            type: 'text',
-            text: RECOGNITION_PROMPT_SINGLE + (fileName ? `\n\nИмя файла: ${fileName}` : ''),
-          },
-        ],
-      },
-    ],
-  });
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-  return parseResponse(response, fileName);
+  const prompt = RECOGNITION_PROMPT_SINGLE + (fileName ? `\n\nИмя файла: ${fileName}` : '');
+
+  const result = await model.generateContent([
+    prompt,
+    {
+      inlineData: {
+        mimeType: mediaType || 'image/jpeg',
+        data: image
+      }
+    }
+  ]);
+
+  const response = await result.response;
+  return parseResponse(response.text(), fileName);
 }
 
 // Обработка многостраничного документа
 async function processMultiPageDocument(images, fileName) {
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
   // Формируем контент с всеми страницами
-  const content = [];
+  const parts = [];
+
+  // Добавляем промпт
+  parts.push(RECOGNITION_PROMPT_MULTI + `\n\nВсего страниц: ${images.length}` + (fileName ? `\nИмя файла: ${fileName}` : ''));
 
   // Добавляем все изображения страниц
   images.forEach((img, index) => {
-    content.push({
-      type: 'image',
-      source: {
-        type: 'base64',
-        media_type: img.mediaType || 'image/png',
-        data: img.data,
-      },
+    parts.push({
+      inlineData: {
+        mimeType: img.mediaType || 'image/png',
+        data: img.data
+      }
     });
   });
 
-  // Добавляем промпт
-  content.push({
-    type: 'text',
-    text: RECOGNITION_PROMPT_MULTI + `\n\nВсего страниц: ${images.length}` + (fileName ? `\nИмя файла: ${fileName}` : ''),
-  });
+  const result = await model.generateContent(parts);
+  const response = await result.response;
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 16000, // Увеличиваем для многостраничных документов
-    messages: [
-      {
-        role: 'user',
-        content: content,
-      },
-    ],
-  });
-
-  return parseResponse(response, fileName);
+  return parseResponse(response.text(), fileName);
 }
 
 // Обработка текстового документа
 async function processTextDocument(textContent, fileName) {
-  // Для текстовых файлов просто анализируем метаданные
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1024,
-    messages: [
-      {
-        role: 'user',
-        content: TEXT_ANALYSIS_PROMPT + `\n\nИмя файла: ${fileName}\n\nТекст документа:\n${textContent.substring(0, 5000)}`,
-      },
-    ],
-  });
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-  const metadata = parseResponse(response, fileName);
+  const prompt = TEXT_ANALYSIS_PROMPT + `\n\nИмя файла: ${fileName}\n\nТекст документа:\n${textContent.substring(0, 5000)}`;
+
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  const metadata = parseResponse(response.text(), fileName);
 
   // Возвращаем оригинальный текст с метаданными
   return {
@@ -256,13 +224,8 @@ async function processTextDocument(textContent, fileName) {
   };
 }
 
-// Парсинг ответа Claude
-function parseResponse(response, fileName) {
-  const responseText = response.content
-    .filter(block => block.type === 'text')
-    .map(block => block.text)
-    .join('');
-
+// Парсинг ответа Gemini
+function parseResponse(responseText, fileName) {
   try {
     // Убираем возможные markdown-обёртки
     const jsonStr = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
