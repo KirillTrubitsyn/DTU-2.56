@@ -28,6 +28,9 @@
     <!-- PDF.js для рендеринга PDF страниц -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
+    <!-- Mammoth.js для чтения DOCX файлов -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
     <style>
         :root {
             --primary: #1a365d;
@@ -1224,6 +1227,32 @@
             font-size: 0.85rem;
         }
 
+        .camera-btn {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.75rem 1.25rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .camera-btn:hover {
+            background: var(--primary-light);
+        }
+
+        @media (max-width: 768px) {
+            .camera-btn {
+                display: inline-flex;
+            }
+        }
+
         .drop-zone input[type="file"] {
             display: none;
         }
@@ -1872,7 +1901,8 @@
                 <div id="adminUploadForm" style="display: none;">
                     <!-- Drop Zone for OCR -->
                     <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-                        <input type="file" id="fileInput" accept="image/*,.pdf,.md,.txt" onchange="handleFileSelect(event)">
+                        <input type="file" id="fileInput" accept="image/*,.pdf,.md,.txt,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="handleFileSelect(event)">
+                        <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleFileSelect(event)" style="display:none">
                         <div id="dropZoneContent">
                             <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -1880,7 +1910,14 @@
                                 <line x1="12" y1="3" x2="12" y2="15"/>
                             </svg>
                             <div class="drop-zone-text">Перетащите файл или нажмите для выбора</div>
-                            <div class="drop-zone-hint">PDF (все страницы), изображения, Markdown, TXT</div>
+                            <div class="drop-zone-hint">PDF, DOCX, изображения, Markdown, TXT</div>
+                            <button type="button" class="camera-btn" id="cameraBtn" onclick="event.stopPropagation(); document.getElementById('cameraInput').click()">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                    <circle cx="12" cy="13" r="4"/>
+                                </svg>
+                                Сделать фото
+                            </button>
                         </div>
                         <div id="processingIndicator" class="processing-indicator" style="display: none;">
                             <div class="spinner"></div>
@@ -2504,17 +2541,18 @@
             const isImage = file.type.startsWith('image/');
             const isPDF = file.type === 'application/pdf';
             const isText = file.name.endsWith('.md') || file.name.endsWith('.txt') || file.type === 'text/plain' || file.type === 'text/markdown';
+            const isDOCX = file.name.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
             // Validate file type
-            if (!isImage && !isPDF && !isText) {
-                showAdminMessage('Поддерживаются: изображения (JPG, PNG, GIF, WebP), PDF, Markdown (.md), TXT', 'error');
+            if (!isImage && !isPDF && !isText && !isDOCX) {
+                showAdminMessage('Поддерживаются: изображения, PDF, DOCX, Markdown (.md), TXT', 'error');
                 return;
             }
 
-            // Validate file size (max 20MB for PDF, 10MB for others)
-            const maxSize = isPDF ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+            // Validate file size (max 20MB for PDF/DOCX, 10MB for others)
+            const maxSize = (isPDF || isDOCX) ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
             if (file.size > maxSize) {
-                showAdminMessage(`Файл слишком большой. Максимум ${isPDF ? '20' : '10'} МБ`, 'error');
+                showAdminMessage(`Файл слишком большой. Максимум ${(isPDF || isDOCX) ? '20' : '10'} МБ`, 'error');
                 return;
             }
 
@@ -2532,6 +2570,8 @@
             previewName.textContent = file.name;
             previewSize.textContent = formatFileSize(file.size);
 
+            const isDOCX = file.name.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -2541,6 +2581,9 @@
             } else if (file.type === 'application/pdf') {
                 // PDF icon
                 previewImage.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="7" y="16" font-size="6" fill="#e53e3e" stroke="none">PDF</text></svg>');
+            } else if (isDOCX) {
+                // DOCX icon (blue)
+                previewImage.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2b579a" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="5" y="16" font-size="5" fill="#2b579a" stroke="none">DOCX</text></svg>');
             } else {
                 // Text/Markdown icon
                 previewImage.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>');
@@ -2581,11 +2624,22 @@
                 let requestBody;
                 const isText = file.name.endsWith('.md') || file.name.endsWith('.txt') || file.type === 'text/plain' || file.type === 'text/markdown';
                 const isPDF = file.type === 'application/pdf';
+                const isDOCX = file.name.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
                 if (isText) {
                     // Текстовые файлы - читаем как текст
                     updateProcessingText('Анализ текстового документа...');
                     const textContent = await readFileAsText(file);
+                    requestBody = {
+                        password: adminPassword,
+                        textContent: textContent,
+                        fileType: 'text',
+                        fileName: file.name
+                    };
+                } else if (isDOCX) {
+                    // DOCX - извлекаем текст через mammoth.js
+                    updateProcessingText('Извлечение текста из DOCX...');
+                    const textContent = await extractDocxText(file);
                     requestBody = {
                         password: adminPassword,
                         textContent: textContent,
@@ -2685,6 +2739,24 @@
                 reader.onload = () => resolve(reader.result);
                 reader.onerror = reject;
                 reader.readAsText(file);
+            });
+        }
+
+        // Извлечение текста из DOCX через mammoth.js
+        async function extractDocxText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    try {
+                        const arrayBuffer = reader.result;
+                        const result = await mammoth.extractRawText({ arrayBuffer });
+                        resolve(result.value);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
             });
         }
 
