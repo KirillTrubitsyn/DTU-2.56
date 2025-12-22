@@ -785,14 +785,32 @@
 
         .chat-message.assistant .sources {
             margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid var(--border);
+            padding: 0.5rem 0.75rem;
+            background: var(--bg);
+            border-radius: 0.375rem;
             font-size: 0.8rem;
             color: var(--text-muted);
         }
 
         .chat-message.assistant .sources strong {
             color: var(--primary);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .chat-message.assistant .sources.no-sources {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .chat-message.assistant .sources ul {
+            margin: 0;
+            padding-left: 1.25rem;
+            list-style: disc;
+        }
+
+        .chat-message.assistant .sources li {
+            margin: 0.125rem 0;
         }
 
         .chat-message.typing {
@@ -1163,6 +1181,255 @@
         .admin-message.error {
             background: var(--weak-light);
             color: var(--weak);
+        }
+
+        /* Admin Tabs */
+        .admin-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
+
+        .admin-tab {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .admin-tab:hover {
+            color: var(--primary);
+        }
+
+        .admin-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .admin-tab-content {
+            display: none;
+        }
+
+        .admin-tab-content.active {
+            display: block;
+        }
+
+        /* Document Stats */
+        .doc-stats {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .doc-stats-total {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .doc-stats-label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Category Filter */
+        .doc-filter {
+            margin-bottom: 1rem;
+        }
+
+        .doc-filter select {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            background: white;
+        }
+
+        /* Document List */
+        .doc-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .doc-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .doc-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .doc-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .doc-item-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .doc-item-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .doc-item-category {
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            background: var(--bg);
+            border-radius: 0.25rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .doc-item-actions {
+            display: flex;
+            gap: 0.25rem;
+            flex-shrink: 0;
+        }
+
+        .doc-item-btn {
+            padding: 0.375rem;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .doc-item-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .doc-item-btn.delete:hover {
+            border-color: var(--weak);
+            color: var(--weak);
+        }
+
+        .doc-item-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Loading state */
+        .doc-loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+
+        .doc-empty {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+
+        /* Pagination */
+        .doc-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .doc-pagination button {
+            padding: 0.5rem 0.75rem;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .doc-pagination button:hover:not(:disabled) {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .doc-pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .doc-pagination span {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Edit Modal */
+        .edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 1rem;
+        }
+
+        .edit-modal.open {
+            display: flex;
+        }
+
+        .edit-modal-content {
+            background: white;
+            border-radius: 0.75rem;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .edit-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .edit-modal-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
         }
 
         .admin-login-form {
@@ -1897,79 +2164,176 @@
                     <button class="admin-btn" onclick="adminLogin()">Войти</button>
                 </div>
 
-                <!-- Upload Form (hidden by default) -->
+                <!-- Admin Content (hidden by default) -->
                 <div id="adminUploadForm" style="display: none;">
-                    <!-- Drop Zone for OCR -->
-                    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-                        <input type="file" id="fileInput" accept="image/*,.pdf,.md,.txt,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="handleFileSelect(event)">
-                        <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleFileSelect(event)" style="display:none">
-                        <div id="dropZoneContent">
-                            <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="17 8 12 3 7 8"/>
-                                <line x1="12" y1="3" x2="12" y2="15"/>
-                            </svg>
-                            <div class="drop-zone-text">Перетащите файл или нажмите для выбора</div>
-                            <div class="drop-zone-hint">PDF, DOCX, изображения, Markdown, TXT</div>
-                            <button type="button" class="camera-btn" id="cameraBtn" onclick="event.stopPropagation(); document.getElementById('cameraInput').click()">
-                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                                    <circle cx="12" cy="13" r="4"/>
-                                </svg>
-                                Сделать фото
-                            </button>
-                        </div>
-                        <div id="processingIndicator" class="processing-indicator" style="display: none;">
-                            <div class="spinner"></div>
-                            <span id="processingText">ИИ распознаёт документ...</span>
-                        </div>
-                    </div>
-
-                    <!-- File Preview -->
-                    <div id="filePreview" class="file-preview" style="display: none;">
-                        <img id="previewImage" src="" alt="Preview">
-                        <div class="file-preview-info">
-                            <div class="file-preview-name" id="previewName"></div>
-                            <div class="file-preview-size" id="previewSize"></div>
-                        </div>
-                        <button class="file-preview-remove" onclick="clearFile()">
-                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M18 6L6 18M6 6l12 12"/>
-                            </svg>
+                    <!-- Admin Tabs -->
+                    <div class="admin-tabs">
+                        <button class="admin-tab active" onclick="switchAdminTab('upload')" id="adminTabUpload">
+                            Загрузка
+                        </button>
+                        <button class="admin-tab" onclick="switchAdminTab('documents')" id="adminTabDocuments">
+                            База знаний <span id="docCountBadge" style="background: var(--primary); color: white; padding: 0.125rem 0.5rem; border-radius: 1rem; font-size: 0.75rem; margin-left: 0.25rem;">0</span>
                         </button>
                     </div>
 
-                    <div class="admin-divider">или заполните вручную</div>
+                    <!-- Upload Tab Content -->
+                    <div class="admin-tab-content active" id="adminUploadTabContent">
+                        <!-- Drop Zone for OCR -->
+                        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                            <input type="file" id="fileInput" accept="image/*,.pdf,.md,.txt,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="handleFileSelect(event)">
+                            <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleFileSelect(event)" style="display:none">
+                            <div id="dropZoneContent">
+                                <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                                <div class="drop-zone-text">Перетащите файл или нажмите для выбора</div>
+                                <div class="drop-zone-hint">PDF, DOCX, изображения, Markdown, TXT</div>
+                                <button type="button" class="camera-btn" id="cameraBtn" onclick="event.stopPropagation(); document.getElementById('cameraInput').click()">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                        <circle cx="12" cy="13" r="4"/>
+                                    </svg>
+                                    Сделать фото
+                                </button>
+                            </div>
+                            <div id="processingIndicator" class="processing-indicator" style="display: none;">
+                                <div class="spinner"></div>
+                                <span id="processingText">ИИ распознаёт документ...</span>
+                            </div>
+                        </div>
 
-                    <div class="admin-form-group">
-                        <label>Название документа *</label>
-                        <input type="text" class="admin-input" id="docTitle" placeholder="Например: Договор поставки №123">
+                        <!-- File Preview -->
+                        <div id="filePreview" class="file-preview" style="display: none;">
+                            <img id="previewImage" src="" alt="Preview">
+                            <div class="file-preview-info">
+                                <div class="file-preview-name" id="previewName"></div>
+                                <div class="file-preview-size" id="previewSize"></div>
+                            </div>
+                            <button class="file-preview-remove" onclick="clearFile()">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="admin-divider">или заполните вручную</div>
+
+                        <div class="admin-form-group">
+                            <label>Название документа *</label>
+                            <input type="text" class="admin-input" id="docTitle" placeholder="Например: Договор поставки №123">
+                        </div>
+                        <div class="admin-form-group">
+                            <label>Содержимое документа *</label>
+                            <textarea class="admin-textarea" id="docContent" placeholder="Вставьте текст документа или загрузите файл для OCR..."></textarea>
+                        </div>
+                        <div class="admin-form-group">
+                            <label>Источник</label>
+                            <input type="text" class="admin-input" id="docSource" placeholder="Например: Приложение к делу №5">
+                        </div>
+                        <div class="admin-form-group">
+                            <label>Категория</label>
+                            <select class="admin-select" id="docCategory">
+                                <option value="документ">Документ</option>
+                                <option value="договор">Договор</option>
+                                <option value="акт">Акт</option>
+                                <option value="переписка">Переписка</option>
+                                <option value="заключение">Экспертное заключение</option>
+                                <option value="судебный_акт">Судебный акт (решение, определение)</option>
+                                <option value="процессуальный_документ">Процессуальный документ (иск, отзыв, ходатайство)</option>
+                                <option value="нормативный_акт">Нормативный акт</option>
+                                <option value="отчет">Отчёт/Мониторинг</option>
+                                <option value="справка_ии">Юридическая справка от ИИ</option>
+                            </select>
+                        </div>
+                        <button class="admin-btn" id="uploadBtn" onclick="uploadDocument()">Загрузить документ в базу знаний</button>
                     </div>
-                    <div class="admin-form-group">
-                        <label>Содержимое документа *</label>
-                        <textarea class="admin-textarea" id="docContent" placeholder="Вставьте текст документа или загрузите файл для OCR..."></textarea>
+
+                    <!-- Documents Tab Content -->
+                    <div class="admin-tab-content" id="adminDocsTabContent">
+                        <!-- Stats -->
+                        <div class="doc-stats">
+                            <div>
+                                <div class="doc-stats-total" id="totalDocsCount">0</div>
+                                <div class="doc-stats-label">документов в базе</div>
+                            </div>
+                        </div>
+
+                        <!-- Category Filter -->
+                        <div class="doc-filter">
+                            <select id="docFilterCategory" onchange="loadDocuments()">
+                                <option value="all">Все категории</option>
+                                <option value="документ">Документ</option>
+                                <option value="договор">Договор</option>
+                                <option value="акт">Акт</option>
+                                <option value="переписка">Переписка</option>
+                                <option value="заключение">Экспертное заключение</option>
+                                <option value="судебный_акт">Судебный акт</option>
+                                <option value="процессуальный_документ">Процессуальный документ</option>
+                                <option value="нормативный_акт">Нормативный акт</option>
+                                <option value="отчет">Отчёт/Мониторинг</option>
+                                <option value="справка_ии">Юридическая справка от ИИ</option>
+                            </select>
+                        </div>
+
+                        <!-- Document List -->
+                        <div class="doc-list" id="docList">
+                            <div class="doc-loading">Загрузка документов...</div>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="doc-pagination" id="docPagination" style="display: none;">
+                            <button onclick="changePage(-1)" id="prevPageBtn">← Назад</button>
+                            <span id="pageInfo">1 / 1</span>
+                            <button onclick="changePage(1)" id="nextPageBtn">Вперёд →</button>
+                        </div>
                     </div>
-                    <div class="admin-form-group">
-                        <label>Источник</label>
-                        <input type="text" class="admin-input" id="docSource" placeholder="Например: Приложение к делу №5">
-                    </div>
-                    <div class="admin-form-group">
-                        <label>Категория</label>
-                        <select class="admin-select" id="docCategory">
-                            <option value="документ">Документ</option>
-                            <option value="договор">Договор</option>
-                            <option value="акт">Акт</option>
-                            <option value="переписка">Переписка</option>
-                            <option value="заключение">Экспертное заключение</option>
-                            <option value="судебный_акт">Судебный акт (решение, определение)</option>
-                            <option value="процессуальный_документ">Процессуальный документ (иск, отзыв, ходатайство)</option>
-                            <option value="нормативный_акт">Нормативный акт</option>
-                            <option value="отчет">Отчёт/Мониторинг</option>
-                            <option value="справка_ии">Юридическая справка от ИИ</option>
-                        </select>
-                    </div>
-                    <button class="admin-btn" id="uploadBtn" onclick="uploadDocument()">Загрузить документ в базу знаний</button>
+
                     <button class="admin-btn" style="margin-top: 0.75rem; background: linear-gradient(135deg, #718096 0%, #4a5568 100%);" onclick="adminLogout()">Выйти</button>
+                </div>
+
+                <!-- Edit Document Modal -->
+                <div class="edit-modal" id="editModal" onclick="closeEditModal(event)">
+                    <div class="edit-modal-content" onclick="event.stopPropagation()">
+                        <div class="edit-modal-header">
+                            <h3>Редактирование документа</h3>
+                            <button class="admin-close" onclick="closeEditModal()">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <input type="hidden" id="editDocId">
+                        <div class="admin-form-group">
+                            <label>Название</label>
+                            <input type="text" class="admin-input" id="editDocTitle">
+                        </div>
+                        <div class="admin-form-group">
+                            <label>Содержимое</label>
+                            <textarea class="admin-textarea" id="editDocContent" style="min-height: 200px;"></textarea>
+                        </div>
+                        <div class="admin-form-group">
+                            <label>Источник</label>
+                            <input type="text" class="admin-input" id="editDocSource">
+                        </div>
+                        <div class="admin-form-group">
+                            <label>Категория</label>
+                            <select class="admin-select" id="editDocCategory">
+                                <option value="документ">Документ</option>
+                                <option value="договор">Договор</option>
+                                <option value="акт">Акт</option>
+                                <option value="переписка">Переписка</option>
+                                <option value="заключение">Экспертное заключение</option>
+                                <option value="судебный_акт">Судебный акт</option>
+                                <option value="процессуальный_документ">Процессуальный документ</option>
+                                <option value="нормативный_акт">Нормативный акт</option>
+                                <option value="отчет">Отчёт/Мониторинг</option>
+                                <option value="справка_ии">Юридическая справка от ИИ</option>
+                            </select>
+                        </div>
+                        <button class="admin-btn" onclick="saveDocument()">Сохранить изменения</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2352,8 +2716,13 @@
                 const data = await response.json();
 
                 let responseContent = data.response;
+
+                // Add sources info
                 if (data.sources && data.sources.length > 0) {
-                    responseContent += `\n\n<div class="sources"><strong>Источники:</strong> ${data.sources.join(', ')}</div>`;
+                    const sourcesList = data.sources.map(s => `<li>${s}</li>`).join('');
+                    responseContent += `\n\n<div class="sources"><strong>📚 Использованы документы из базы знаний:</strong><ul>${sourcesList}</ul></div>`;
+                } else {
+                    responseContent += `\n\n<div class="sources no-sources"><strong>⚠️ Документы из базы знаний не найдены</strong><br>Ответ основан на общих знаниях модели</div>`;
                 }
 
                 addMessage(responseContent, 'assistant');
@@ -2420,8 +2789,11 @@
             // Switch to upload form
             document.getElementById('adminLoginForm').style.display = 'none';
             document.getElementById('adminUploadForm').style.display = 'block';
-            document.getElementById('adminTitle').textContent = 'Загрузка документов';
+            document.getElementById('adminTitle').textContent = 'Панель администратора';
             document.getElementById('adminPassword').value = '';
+
+            // Load documents count
+            loadDocuments();
         }
 
         function adminLogout() {
@@ -2483,6 +2855,8 @@
 
                 showAdminMessage(data.message, 'success');
                 clearUploadForm();
+                // Refresh document list
+                loadDocuments();
 
             } catch (error) {
                 console.error('Upload error:', error);
@@ -2490,6 +2864,253 @@
             } finally {
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = 'Загрузить документ в базу знаний';
+            }
+        }
+
+        // ========== Document Management ==========
+
+        let currentPage = 1;
+        const docsPerPage = 20;
+
+        function switchAdminTab(tab) {
+            const uploadTab = document.getElementById('adminTabUpload');
+            const docsTab = document.getElementById('adminTabDocuments');
+            const uploadContent = document.getElementById('adminUploadTabContent');
+            const docsContent = document.getElementById('adminDocsTabContent');
+
+            if (tab === 'upload') {
+                uploadTab.classList.add('active');
+                docsTab.classList.remove('active');
+                uploadContent.classList.add('active');
+                docsContent.classList.remove('active');
+            } else {
+                uploadTab.classList.remove('active');
+                docsTab.classList.add('active');
+                uploadContent.classList.remove('active');
+                docsContent.classList.add('active');
+                loadDocuments();
+            }
+        }
+
+        async function loadDocuments() {
+            const docList = document.getElementById('docList');
+            const category = document.getElementById('docFilterCategory').value;
+
+            docList.innerHTML = '<div class="doc-loading">Загрузка документов...</div>';
+
+            try {
+                const params = new URLSearchParams({
+                    password: adminPassword,
+                    page: currentPage,
+                    limit: docsPerPage,
+                    category: category
+                });
+
+                const response = await fetch(`/api/documents?${params}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showAdminMessage('Сессия истекла', 'error');
+                        adminLogout();
+                        return;
+                    }
+                    throw new Error(data.error);
+                }
+
+                // Update counts
+                document.getElementById('totalDocsCount').textContent = data.total;
+                document.getElementById('docCountBadge').textContent = data.total;
+
+                // Render documents
+                if (data.documents.length === 0) {
+                    docList.innerHTML = '<div class="doc-empty">Документы не найдены</div>';
+                } else {
+                    docList.innerHTML = data.documents.map(doc => renderDocItem(doc)).join('');
+                }
+
+                // Update pagination
+                const totalPages = Math.ceil(data.total / docsPerPage);
+                const pagination = document.getElementById('docPagination');
+                if (totalPages > 1) {
+                    pagination.style.display = 'flex';
+                    document.getElementById('pageInfo').textContent = `${currentPage} / ${totalPages}`;
+                    document.getElementById('prevPageBtn').disabled = currentPage === 1;
+                    document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
+                } else {
+                    pagination.style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error('Load documents error:', error);
+                docList.innerHTML = '<div class="doc-empty">Ошибка загрузки документов</div>';
+            }
+        }
+
+        function renderDocItem(doc) {
+            const date = doc.created_at ? new Date(doc.created_at).toLocaleDateString('ru-RU') : '';
+            const categoryLabels = {
+                'документ': 'Документ',
+                'договор': 'Договор',
+                'акт': 'Акт',
+                'переписка': 'Переписка',
+                'заключение': 'Заключение',
+                'судебный_акт': 'Судебный акт',
+                'процессуальный_документ': 'Процессуальный док.',
+                'нормативный_акт': 'Норм. акт',
+                'отчет': 'Отчёт',
+                'справка_ии': 'Справка ИИ'
+            };
+
+            return `
+                <div class="doc-item">
+                    <div class="doc-item-info">
+                        <div class="doc-item-title" title="${escapeHtml(doc.title)}">${escapeHtml(doc.title)}</div>
+                        <div class="doc-item-meta">
+                            <span class="doc-item-category">${categoryLabels[doc.category] || doc.category}</span>
+                            ${date ? `<span>${date}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="doc-item-actions">
+                        <button class="doc-item-btn" onclick="editDocument(${doc.id})" title="Редактировать">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="doc-item-btn delete" onclick="deleteDocument(${doc.id}, '${escapeHtml(doc.title)}')" title="Удалить">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            loadDocuments();
+        }
+
+        // Documents cache for editing
+        let documentsCache = {};
+
+        async function editDocument(id) {
+            try {
+                // Fetch document data
+                const params = new URLSearchParams({
+                    password: adminPassword,
+                    page: 1,
+                    limit: 1000
+                });
+                const response = await fetch(`/api/documents?${params}`);
+                const data = await response.json();
+
+                const doc = data.documents.find(d => d.id === id);
+                if (!doc) {
+                    showAdminMessage('Документ не найден', 'error');
+                    return;
+                }
+
+                // Fill edit form
+                document.getElementById('editDocId').value = doc.id;
+                document.getElementById('editDocTitle').value = doc.title || '';
+                document.getElementById('editDocContent').value = doc.content || '';
+                document.getElementById('editDocSource').value = doc.source || '';
+                document.getElementById('editDocCategory').value = doc.category || 'документ';
+
+                // Show modal
+                document.getElementById('editModal').classList.add('open');
+
+            } catch (error) {
+                console.error('Edit document error:', error);
+                showAdminMessage('Ошибка загрузки документа', 'error');
+            }
+        }
+
+        function closeEditModal(event) {
+            if (!event || event.target === event.currentTarget) {
+                document.getElementById('editModal').classList.remove('open');
+            }
+        }
+
+        async function saveDocument() {
+            const id = document.getElementById('editDocId').value;
+            const title = document.getElementById('editDocTitle').value.trim();
+            const content = document.getElementById('editDocContent').value.trim();
+            const source = document.getElementById('editDocSource').value.trim();
+            const category = document.getElementById('editDocCategory').value;
+
+            if (!title || !content) {
+                showAdminMessage('Заполните название и содержимое', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/documents', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        password: adminPassword,
+                        id: parseInt(id),
+                        title,
+                        content,
+                        source,
+                        category
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error);
+                }
+
+                showAdminMessage('Документ обновлён', 'success');
+                closeEditModal();
+                loadDocuments();
+
+            } catch (error) {
+                console.error('Save document error:', error);
+                showAdminMessage(error.message || 'Ошибка сохранения', 'error');
+            }
+        }
+
+        async function deleteDocument(id, title) {
+            if (!confirm(`Удалить документ "${title}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/documents', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        password: adminPassword,
+                        id: id
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error);
+                }
+
+                showAdminMessage('Документ удалён', 'success');
+                loadDocuments();
+
+            } catch (error) {
+                console.error('Delete document error:', error);
+                showAdminMessage(error.message || 'Ошибка удаления', 'error');
             }
         }
 

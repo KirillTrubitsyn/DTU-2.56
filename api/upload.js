@@ -23,25 +23,74 @@ async function getEmbedding(text) {
   }
 }
 
-// Разбиение текста на чанки
-function splitIntoChunks(text, maxLength = 1500) {
-  const paragraphs = text.split(/\n\n+/);
-  const chunks = [];
-  let currentChunk = '';
+// Улучшенное разбиение текста на чанки с перекрытием
+function splitIntoChunks(text, maxLength = 1000, overlap = 200) {
+  // Для коротких текстов - возвращаем как есть
+  if (text.length <= maxLength) {
+    return [text];
+  }
 
-  for (const paragraph of paragraphs) {
-    if (currentChunk.length + paragraph.length > maxLength && currentChunk) {
-      chunks.push(currentChunk.trim());
-      currentChunk = paragraph;
-    } else {
-      currentChunk += (currentChunk ? '\n\n' : '') + paragraph;
+  const chunks = [];
+  let start = 0;
+
+  while (start < text.length) {
+    let end = start + maxLength;
+
+    // Если это не конец текста, ищем границу предложения
+    if (end < text.length) {
+      // Ищем конец предложения (. ! ? или \n\n) в последних 30% чанка
+      const searchStart = start + Math.floor(maxLength * 0.7);
+      const searchArea = text.slice(searchStart, end);
+
+      // Приоритет: конец абзаца > конец предложения
+      let breakPoint = searchArea.lastIndexOf('\n\n');
+      if (breakPoint === -1) {
+        // Ищем конец предложения
+        const sentenceEnders = ['. ', '.\n', '! ', '!\n', '? ', '?\n'];
+        for (const ender of sentenceEnders) {
+          const pos = searchArea.lastIndexOf(ender);
+          if (pos > breakPoint) {
+            breakPoint = pos + ender.length - 1;
+          }
+        }
+      }
+
+      if (breakPoint !== -1) {
+        end = searchStart + breakPoint + 1;
+      }
+    }
+
+    // Добавляем чанк
+    const chunk = text.slice(start, end).trim();
+    if (chunk) {
+      chunks.push(chunk);
+    }
+
+    // Следующий чанк начинается с перекрытием
+    // Но ищем начало предложения для чистого старта
+    let nextStart = end - overlap;
+    if (nextStart > start && nextStart < text.length) {
+      // Ищем начало предложения после точки перекрытия
+      const overlapArea = text.slice(nextStart, end);
+      const sentenceStart = overlapArea.search(/[.!?]\s+[А-ЯA-Z]/);
+      if (sentenceStart !== -1) {
+        nextStart = nextStart + sentenceStart + 2; // После ". "
+      }
+    }
+
+    start = Math.max(nextStart, end); // Защита от бесконечного цикла
+
+    // Если остаток меньше overlap, просто берём его
+    if (text.length - start < overlap) {
+      const lastChunk = text.slice(start).trim();
+      if (lastChunk && lastChunk.length > 50) { // Минимум 50 символов
+        chunks.push(lastChunk);
+      }
+      break;
     }
   }
 
-  if (currentChunk.trim()) {
-    chunks.push(currentChunk.trim());
-  }
-
+  console.log(`Chunking: ${text.length} chars → ${chunks.length} chunks`);
   return chunks.length > 0 ? chunks : [text];
 }
 
