@@ -2488,7 +2488,7 @@
         // Saved responses storage
         let savedResponses = JSON.parse(localStorage.getItem('savedResponses') || '[]');
 
-        function addMessage(content, role) {
+        function addMessage(content, role, sourcesHtml = '') {
             const messagesContainer = document.getElementById('chatMessages');
 
             // Remove welcome message on first message
@@ -2502,7 +2502,8 @@
 
             const messageDiv = document.createElement('div');
             messageDiv.className = `chat-message ${role}`;
-            messageDiv.innerHTML = formatMessage(content);
+            // Format message first, then append sources HTML (which bypasses escaping)
+            messageDiv.innerHTML = formatMessage(content) + sourcesHtml;
             wrapper.appendChild(messageDiv);
 
             // Add save button for assistant messages
@@ -2718,15 +2719,14 @@
 
                 let responseContent = data.response;
 
-                // Add sources info
+                // Build sources HTML (will be appended after markdown formatting)
+                let sourcesHtml = '';
                 if (data.sources && data.sources.length > 0) {
                     const sourcesList = data.sources.map(s => `<li>${s}</li>`).join('');
-                    responseContent += `\n\n<div class="sources"><strong>📚 Использованы документы из базы знаний:</strong><ul>${sourcesList}</ul></div>`;
-                } else {
-                    responseContent += `\n\n<div class="sources no-sources"><strong>⚠️ Документы из базы знаний не найдены</strong><br>Ответ основан на общих знаниях модели</div>`;
+                    sourcesHtml = `<div class="sources"><strong>📚 Использованы документы из базы знаний:</strong><ul>${sourcesList}</ul></div>`;
                 }
 
-                addMessage(responseContent, 'assistant');
+                addMessage(responseContent, 'assistant', sourcesHtml);
                 conversationHistory.push({ role: 'assistant', content: data.response });
 
             } catch (error) {
