@@ -43,32 +43,64 @@ async function getEmbedding(text) {
   }
 }
 
-// Function to search relevant documents in Supabase
-async function searchDocuments(query, limit = 5) {
+// Hybrid search: combines vector similarity + keyword search
+async function searchDocuments(query, limit = 8) {
   try {
     const embedding = await getEmbedding(query);
+    let vectorResults = [];
+    let keywordResults = [];
 
-    if (!embedding) {
-      // Fallback: simple text search if embeddings fail
+    // 1. Vector similarity search (if embedding available)
+    if (embedding) {
+      const { data, error } = await supabase.rpc('match_documents', {
+        query_embedding: embedding,
+        match_threshold: 0.5,  // Lowered from 0.7 for better recall
+        match_count: limit
+      });
+      if (!error && data) {
+        vectorResults = data;
+      }
+    }
+
+    // 2. Keyword search (always run as supplement)
+    try {
       const { data, error } = await supabase
         .from('documents')
         .select('id, title, content, source')
         .textSearch('content', query, { type: 'websearch', config: 'russian' })
         .limit(limit);
 
-      if (error) throw error;
-      return data || [];
+      if (!error && data) {
+        keywordResults = data;
+      }
+    } catch (e) {
+      // Keyword search failed, continue with vector results only
+      console.log('Keyword search failed:', e.message);
     }
 
-    // Vector similarity search
-    const { data, error } = await supabase.rpc('match_documents', {
-      query_embedding: embedding,
-      match_threshold: 0.7,
-      match_count: limit
-    });
+    // 3. Merge results (vector first, then keyword, deduplicated)
+    const seenIds = new Set();
+    const merged = [];
 
-    if (error) throw error;
-    return data || [];
+    // Add vector results first (higher priority)
+    for (const doc of vectorResults) {
+      if (!seenIds.has(doc.id)) {
+        seenIds.add(doc.id);
+        merged.push(doc);
+      }
+    }
+
+    // Add keyword results that weren't in vector results
+    for (const doc of keywordResults) {
+      if (!seenIds.has(doc.id)) {
+        seenIds.add(doc.id);
+        merged.push(doc);
+      }
+    }
+
+    console.log(`Search results: ${vectorResults.length} vector + ${keywordResults.length} keyword = ${merged.length} merged`);
+
+    return merged.slice(0, limit);
   } catch (error) {
     console.error('Search error:', error);
     return [];
