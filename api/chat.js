@@ -260,7 +260,7 @@ export default async function handler(req, res) {
 
     // Initialize Gemini model with system instruction
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       systemInstruction: SYSTEM_PROMPT,
     });
 
