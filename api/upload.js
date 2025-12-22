@@ -1,22 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+
 // Пароль администратора (в production лучше хранить в env)
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Braesecke1973';
 
-// Получение embedding через Supabase Edge Function
+// Получение embedding через Google (та же модель что в chat.js)
 async function getEmbedding(text) {
   try {
-    const { data, error } = await supabase.functions.invoke('embed', {
-      body: { text }
-    });
-
-    if (error) throw error;
-    return data.embedding;
+    const embeddingModel = genAI.getGenerativeModel({ model: 'text-embedding-004' });
+    const result = await embeddingModel.embedContent(text);
+    return result.embedding.values;
   } catch (error) {
     console.error('Embedding error:', error);
     return null;
