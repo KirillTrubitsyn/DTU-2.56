@@ -3307,6 +3307,52 @@
                     // PDF - конвертируем все страницы в изображения
                     updateProcessingText('Загрузка PDF...');
                     const images = await convertPdfToImages(file);
+
+                    // Разбиваем на части по 5 страниц для больших PDF
+                    const PAGES_PER_BATCH = 5;
+                    if (images.length > PAGES_PER_BATCH) {
+                        const results = [];
+                        const totalBatches = Math.ceil(images.length / PAGES_PER_BATCH);
+
+                        for (let i = 0; i < images.length; i += PAGES_PER_BATCH) {
+                            const batch = images.slice(i, i + PAGES_PER_BATCH);
+                            const batchNum = Math.floor(i / PAGES_PER_BATCH) + 1;
+                            updateProcessingText(`Распознавание ${batchNum}/${totalBatches}...`);
+
+                            const response = await fetch('/api/recognize', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    password: adminPassword,
+                                    images: batch,
+                                    fileName: file.name
+                                }),
+                            });
+
+                            if (!response.ok) {
+                                const errorText = await response.text();
+                                throw new Error(`Ошибка части ${batchNum}: ${errorText.substring(0, 100)}`);
+                            }
+
+                            results.push(await response.json());
+                        }
+
+                        // Объединяем результаты
+                        const combinedContent = results.map(r => r.content || '').join('\n\n');
+                        const first = results[0] || {};
+
+                        document.getElementById('docTitle').value = first.title || file.name;
+                        document.getElementById('docContent').value = combinedContent;
+                        document.getElementById('docSource').value = first.source || file.name;
+                        if (first.category) {
+                            document.getElementById('docCategory').value = first.category;
+                        }
+
+                        showAdminMessage(`Распознано ${images.length} стр! Проверьте данные`, 'success');
+                        return;
+                    }
+
+                    // Маленький PDF - целиком
                     updateProcessingText(`Распознавание ${images.length} стр...`);
                     requestBody = {
                         password: adminPassword,
