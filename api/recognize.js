@@ -167,7 +167,7 @@ export default async function handler(req, res) {
 
 // Обработка одиночного изображения
 async function processSingleImage(image, mediaType, fileName) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   const prompt = RECOGNITION_PROMPT_SINGLE + (fileName ? `\n\nИмя файла: ${fileName}` : '');
 
@@ -187,7 +187,7 @@ async function processSingleImage(image, mediaType, fileName) {
 
 // Обработка многостраничного документа
 async function processMultiPageDocument(images, fileName) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   // Формируем контент с всеми страницами
   const parts = [];
@@ -213,7 +213,7 @@ async function processMultiPageDocument(images, fileName) {
 
 // Обработка текстового документа
 async function processTextDocument(textContent, fileName) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   const prompt = TEXT_ANALYSIS_PROMPT + `\n\nИмя файла: ${fileName}\n\nТекст документа:\n${textContent.substring(0, 5000)}`;
 

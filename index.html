@@ -3326,24 +3326,36 @@
                 }
 
                 // Call recognition API
+                const bodyStr = JSON.stringify(requestBody);
+                console.log('Request size:', (bodyStr.length / 1024 / 1024).toFixed(2), 'MB');
+
                 const response = await fetch('/api/recognize', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(requestBody),
+                    body: bodyStr,
                 });
 
-                const data = await response.json();
-
+                // Сначала проверяем статус, потом парсим
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API Error:', response.status, errorText);
                     if (response.status === 401) {
                         showAdminMessage('Неверный пароль', 'error');
                         adminLogout();
                         return;
                     }
-                    throw new Error(data.error || 'Ошибка распознавания');
+                    // Попробуем распарсить как JSON, иначе покажем текст
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        throw new Error(errorData.error || `Ошибка сервера: ${response.status}`);
+                    } catch (e) {
+                        throw new Error(`Ошибка сервера (${response.status}): ${errorText.substring(0, 100)}`);
+                    }
                 }
+
+                const data = await response.json();
 
                 // Fill the form with recognized data
                 if (data.title) {
@@ -3431,12 +3443,12 @@
                 updateProcessingText(`Обработка страницы ${pageNum}/${numPages}...`);
 
                 const page = await pdf.getPage(pageNum);
-                // Масштаб 1.5 - баланс качества и размера
-                const scale = 1.5;
+                // Масштаб 1.2 - достаточно для OCR
+                const scale = 1.2;
                 const viewport = page.getViewport({ scale });
 
-                // Ограничиваем максимальный размер (макс 1500px по большей стороне)
-                const maxDimension = 1500;
+                // Ограничиваем максимальный размер (макс 1200px по большей стороне)
+                const maxDimension = 1200;
                 let finalScale = scale;
                 if (viewport.width > maxDimension || viewport.height > maxDimension) {
                     const ratio = maxDimension / Math.max(viewport.width, viewport.height);
@@ -3456,8 +3468,8 @@
                     viewport: finalViewport
                 }).promise;
 
-                // Конвертируем в JPEG с качеством 0.8 для меньшего размера
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                // Конвертируем в JPEG с качеством 0.6 для меньшего размера
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
                 const base64 = dataUrl.split(',')[1];
 
                 images.push({
