@@ -785,14 +785,32 @@
 
         .chat-message.assistant .sources {
             margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid var(--border);
+            padding: 0.5rem 0.75rem;
+            background: var(--bg);
+            border-radius: 0.375rem;
             font-size: 0.8rem;
             color: var(--text-muted);
         }
 
         .chat-message.assistant .sources strong {
             color: var(--primary);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .chat-message.assistant .sources.no-sources {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .chat-message.assistant .sources ul {
+            margin: 0;
+            padding-left: 1.25rem;
+            list-style: disc;
+        }
+
+        .chat-message.assistant .sources li {
+            margin: 0.125rem 0;
         }
 
         .chat-message.typing {
@@ -2698,8 +2716,13 @@
                 const data = await response.json();
 
                 let responseContent = data.response;
+
+                // Add sources info
                 if (data.sources && data.sources.length > 0) {
-                    responseContent += `\n\n<div class="sources"><strong>Источники:</strong> ${data.sources.join(', ')}</div>`;
+                    const sourcesList = data.sources.map(s => `<li>${s}</li>`).join('');
+                    responseContent += `\n\n<div class="sources"><strong>📚 Использованы документы из базы знаний:</strong><ul>${sourcesList}</ul></div>`;
+                } else {
+                    responseContent += `\n\n<div class="sources no-sources"><strong>⚠️ Документы из базы знаний не найдены</strong><br>Ответ основан на общих знаниях модели</div>`;
                 }
 
                 addMessage(responseContent, 'assistant');
