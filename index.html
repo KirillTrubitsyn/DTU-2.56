@@ -25,6 +25,9 @@
     <meta name="msapplication-TileColor" content="#1a365d">
     <meta name="msapplication-TileImage" content="icon-192.png">
 
+    <!-- PDF.js для рендеринга PDF страниц -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
     <style>
         :root {
             --primary: #1a365d;
@@ -968,6 +971,347 @@
             .saved-card {
                 padding: 0.75rem;
             }
+            .admin-fab {
+                bottom: 1rem;
+                right: 5rem;
+            }
+        }
+
+        /* Admin Panel Styles */
+        .admin-fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 7rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(113, 128, 150, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .admin-fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(113, 128, 150, 0.5);
+        }
+
+        .admin-fab svg {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+
+        .admin-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .admin-modal.open {
+            display: flex;
+        }
+
+        .admin-panel {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            width: 500px;
+            max-width: calc(100vw - 2rem);
+            max-height: calc(100vh - 4rem);
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+            color: white;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .admin-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .admin-close {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0.5rem;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .admin-close:hover {
+            opacity: 1;
+        }
+
+        .admin-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 12rem);
+        }
+
+        .admin-form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .admin-form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        .admin-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .admin-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .admin-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            min-height: 150px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .admin-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .admin-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            background: white;
+            cursor: pointer;
+        }
+
+        .admin-btn {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .admin-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(26, 54, 93, 0.3);
+        }
+
+        .admin-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .admin-message {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .admin-message.success {
+            background: var(--strong-light);
+            color: var(--strong);
+        }
+
+        .admin-message.error {
+            background: var(--weak-light);
+            color: var(--weak);
+        }
+
+        .admin-login-form {
+            text-align: center;
+        }
+
+        .admin-login-form svg {
+            width: 48px;
+            height: 48px;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .admin-login-form p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        /* File Upload / Drop Zone Styles */
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 0.75rem;
+            padding: 2rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg);
+            margin-bottom: 1.25rem;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--primary);
+            background: rgba(26, 54, 93, 0.05);
+        }
+
+        .drop-zone.drag-over {
+            border-color: var(--primary);
+            background: rgba(26, 54, 93, 0.1);
+            transform: scale(1.02);
+        }
+
+        .drop-zone.processing {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .drop-zone-icon {
+            width: 48px;
+            height: 48px;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .drop-zone-text {
+            color: var(--text);
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .drop-zone-hint {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .drop-zone input[type="file"] {
+            display: none;
+        }
+
+        .processing-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 1rem;
+        }
+
+        .processing-indicator .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .file-preview {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .file-preview img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .file-preview-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-preview-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-preview-size {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .file-preview-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: color 0.2s;
+        }
+
+        .file-preview-remove:hover {
+            color: var(--weak);
+        }
+
+        .admin-divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.25rem 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .admin-divider::before,
+        .admin-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
         }
 
         /* Markdown styling in chat */
@@ -1491,6 +1835,107 @@
         <p style="margin-top: 0.5rem;">Потенциальное снижение: до полного отказа (линии 1-2) | минус 2 047 545 642 ₽ (линия 3)</p>
     </footer>
 
+    <!-- Admin Button -->
+    <button class="admin-fab" onclick="toggleAdmin()" aria-label="Панель администратора">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+        </svg>
+    </button>
+
+    <!-- Admin Modal -->
+    <div class="admin-modal" id="adminModal" onclick="closeAdminOnBackdrop(event)">
+        <div class="admin-panel" onclick="event.stopPropagation()">
+            <div class="admin-header">
+                <h2 id="adminTitle">Вход администратора</h2>
+                <button class="admin-close" onclick="toggleAdmin()">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="admin-body">
+                <div id="adminMessage"></div>
+
+                <!-- Login Form -->
+                <div id="adminLoginForm" class="admin-login-form">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <p>Введите пароль для доступа к загрузке документов</p>
+                    <div class="admin-form-group">
+                        <input type="password" class="admin-input" id="adminPassword" placeholder="Пароль" onkeypress="handleAdminKeyPress(event)">
+                    </div>
+                    <button class="admin-btn" onclick="adminLogin()">Войти</button>
+                </div>
+
+                <!-- Upload Form (hidden by default) -->
+                <div id="adminUploadForm" style="display: none;">
+                    <!-- Drop Zone for OCR -->
+                    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                        <input type="file" id="fileInput" accept="image/*,.pdf,.md,.txt" onchange="handleFileSelect(event)">
+                        <div id="dropZoneContent">
+                            <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <div class="drop-zone-text">Перетащите файл или нажмите для выбора</div>
+                            <div class="drop-zone-hint">PDF (все страницы), изображения, Markdown, TXT</div>
+                        </div>
+                        <div id="processingIndicator" class="processing-indicator" style="display: none;">
+                            <div class="spinner"></div>
+                            <span id="processingText">ИИ распознаёт документ...</span>
+                        </div>
+                    </div>
+
+                    <!-- File Preview -->
+                    <div id="filePreview" class="file-preview" style="display: none;">
+                        <img id="previewImage" src="" alt="Preview">
+                        <div class="file-preview-info">
+                            <div class="file-preview-name" id="previewName"></div>
+                            <div class="file-preview-size" id="previewSize"></div>
+                        </div>
+                        <button class="file-preview-remove" onclick="clearFile()">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="admin-divider">или заполните вручную</div>
+
+                    <div class="admin-form-group">
+                        <label>Название документа *</label>
+                        <input type="text" class="admin-input" id="docTitle" placeholder="Например: Договор поставки №123">
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Содержимое документа *</label>
+                        <textarea class="admin-textarea" id="docContent" placeholder="Вставьте текст документа или загрузите файл для OCR..."></textarea>
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Источник</label>
+                        <input type="text" class="admin-input" id="docSource" placeholder="Например: Приложение к делу №5">
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Категория</label>
+                        <select class="admin-select" id="docCategory">
+                            <option value="документ">Документ</option>
+                            <option value="договор">Договор</option>
+                            <option value="акт">Акт</option>
+                            <option value="переписка">Переписка</option>
+                            <option value="заключение">Экспертное заключение</option>
+                            <option value="судебный_акт">Судебный акт</option>
+                            <option value="нормативный_акт">Нормативный акт</option>
+                            <option value="отчет">Отчёт/Мониторинг</option>
+                        </select>
+                    </div>
+                    <button class="admin-btn" id="uploadBtn" onclick="uploadDocument()">Загрузить документ в базу знаний</button>
+                    <button class="admin-btn" style="margin-top: 0.75rem; background: linear-gradient(135deg, #718096 0%, #4a5568 100%);" onclick="adminLogout()">Выйти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- AI Chat Button -->
     <button class="chat-fab" onclick="toggleChat()" aria-label="Открыть чат с ИИ">
         <span class="badge-notify">AI</span>
@@ -1885,6 +2330,408 @@
                 input.focus();
             }
         }
+
+        // ========== Admin Panel Functionality ==========
+
+        let adminPassword = null;
+
+        function toggleAdmin() {
+            const modal = document.getElementById('adminModal');
+            modal.classList.toggle('open');
+            if (modal.classList.contains('open')) {
+                if (adminPassword) {
+                    document.getElementById('docTitle').focus();
+                } else {
+                    document.getElementById('adminPassword').focus();
+                }
+            }
+        }
+
+        function closeAdminOnBackdrop(event) {
+            if (event.target.id === 'adminModal') {
+                toggleAdmin();
+            }
+        }
+
+        function handleAdminKeyPress(event) {
+            if (event.key === 'Enter') {
+                adminLogin();
+            }
+        }
+
+        function showAdminMessage(message, type) {
+            const msgDiv = document.getElementById('adminMessage');
+            msgDiv.innerHTML = `<div class="admin-message ${type}">${message}</div>`;
+            setTimeout(() => {
+                msgDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function adminLogin() {
+            const password = document.getElementById('adminPassword').value;
+
+            if (!password) {
+                showAdminMessage('Введите пароль', 'error');
+                return;
+            }
+
+            // Store password for API calls
+            adminPassword = password;
+
+            // Switch to upload form
+            document.getElementById('adminLoginForm').style.display = 'none';
+            document.getElementById('adminUploadForm').style.display = 'block';
+            document.getElementById('adminTitle').textContent = 'Загрузка документов';
+            document.getElementById('adminPassword').value = '';
+        }
+
+        function adminLogout() {
+            adminPassword = null;
+            document.getElementById('adminLoginForm').style.display = 'block';
+            document.getElementById('adminUploadForm').style.display = 'none';
+            document.getElementById('adminTitle').textContent = 'Вход администратора';
+            clearUploadForm();
+        }
+
+        function clearUploadForm() {
+            document.getElementById('docTitle').value = '';
+            document.getElementById('docContent').value = '';
+            document.getElementById('docSource').value = '';
+            document.getElementById('docCategory').value = 'документ';
+            clearFile();
+        }
+
+        async function uploadDocument() {
+            const title = document.getElementById('docTitle').value.trim();
+            const content = document.getElementById('docContent').value.trim();
+            const source = document.getElementById('docSource').value.trim();
+            const category = document.getElementById('docCategory').value;
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (!title || !content) {
+                showAdminMessage('Заполните название и содержимое документа', 'error');
+                return;
+            }
+
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Загрузка...';
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        password: adminPassword,
+                        title,
+                        content,
+                        source,
+                        category
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showAdminMessage('Неверный пароль', 'error');
+                        adminLogout();
+                        return;
+                    }
+                    throw new Error(data.error || 'Ошибка загрузки');
+                }
+
+                showAdminMessage(data.message, 'success');
+                clearUploadForm();
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                showAdminMessage(error.message || 'Ошибка загрузки документа', 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Загрузить документ в базу знаний';
+            }
+        }
+
+        // ========== File Upload & OCR Functionality ==========
+
+        let currentFile = null;
+
+        // Initialize drag & drop when admin form is shown
+        function initDropZone() {
+            const dropZone = document.getElementById('dropZone');
+            if (!dropZone) return;
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+            });
+
+            dropZone.addEventListener('drop', handleDrop, false);
+        }
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleDrop(e) {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        async function processFile(file) {
+            // Определяем тип файла
+            const isImage = file.type.startsWith('image/');
+            const isPDF = file.type === 'application/pdf';
+            const isText = file.name.endsWith('.md') || file.name.endsWith('.txt') || file.type === 'text/plain' || file.type === 'text/markdown';
+
+            // Validate file type
+            if (!isImage && !isPDF && !isText) {
+                showAdminMessage('Поддерживаются: изображения (JPG, PNG, GIF, WebP), PDF, Markdown (.md), TXT', 'error');
+                return;
+            }
+
+            // Validate file size (max 20MB for PDF, 10MB for others)
+            const maxSize = isPDF ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showAdminMessage(`Файл слишком большой. Максимум ${isPDF ? '20' : '10'} МБ`, 'error');
+                return;
+            }
+
+            currentFile = file;
+            showFilePreview(file);
+            await recognizeDocument(file);
+        }
+
+        function showFilePreview(file) {
+            const preview = document.getElementById('filePreview');
+            const previewImage = document.getElementById('previewImage');
+            const previewName = document.getElementById('previewName');
+            const previewSize = document.getElementById('previewSize');
+
+            previewName.textContent = file.name;
+            previewSize.textContent = formatFileSize(file.size);
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else if (file.type === 'application/pdf') {
+                // PDF icon
+                previewImage.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="7" y="16" font-size="6" fill="#e53e3e" stroke="none">PDF</text></svg>');
+            } else {
+                // Text/Markdown icon
+                previewImage.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>');
+            }
+
+            preview.style.display = 'flex';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' Б';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
+        }
+
+        function clearFile() {
+            currentFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('filePreview').style.display = 'none';
+            document.getElementById('previewImage').src = '';
+        }
+
+        function updateProcessingText(text) {
+            document.getElementById('processingText').textContent = text;
+        }
+
+        async function recognizeDocument(file) {
+            const dropZone = document.getElementById('dropZone');
+            const dropZoneContent = document.getElementById('dropZoneContent');
+            const processingIndicator = document.getElementById('processingIndicator');
+
+            // Show processing state
+            dropZone.classList.add('processing');
+            dropZoneContent.style.display = 'none';
+            processingIndicator.style.display = 'flex';
+            updateProcessingText('Подготовка файла...');
+
+            try {
+                let requestBody;
+                const isText = file.name.endsWith('.md') || file.name.endsWith('.txt') || file.type === 'text/plain' || file.type === 'text/markdown';
+                const isPDF = file.type === 'application/pdf';
+
+                if (isText) {
+                    // Текстовые файлы - читаем как текст
+                    updateProcessingText('Анализ текстового документа...');
+                    const textContent = await readFileAsText(file);
+                    requestBody = {
+                        password: adminPassword,
+                        textContent: textContent,
+                        fileType: 'text',
+                        fileName: file.name
+                    };
+                } else if (isPDF) {
+                    // PDF - конвертируем все страницы в изображения
+                    updateProcessingText('Загрузка PDF...');
+                    const images = await convertPdfToImages(file);
+                    updateProcessingText(`Распознавание ${images.length} стр...`);
+                    requestBody = {
+                        password: adminPassword,
+                        images: images,
+                        fileName: file.name
+                    };
+                } else {
+                    // Изображение
+                    updateProcessingText('ИИ распознаёт документ...');
+                    const base64 = await fileToBase64(file);
+                    requestBody = {
+                        password: adminPassword,
+                        image: base64,
+                        mediaType: file.type,
+                        fileName: file.name
+                    };
+                }
+
+                // Call recognition API
+                const response = await fetch('/api/recognize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showAdminMessage('Неверный пароль', 'error');
+                        adminLogout();
+                        return;
+                    }
+                    throw new Error(data.error || 'Ошибка распознавания');
+                }
+
+                // Fill the form with recognized data
+                if (data.title) {
+                    document.getElementById('docTitle').value = data.title;
+                }
+                if (data.content) {
+                    document.getElementById('docContent').value = data.content;
+                }
+                if (data.source) {
+                    document.getElementById('docSource').value = data.source;
+                }
+                if (data.category) {
+                    const categorySelect = document.getElementById('docCategory');
+                    const option = Array.from(categorySelect.options).find(opt => opt.value === data.category);
+                    if (option) {
+                        categorySelect.value = data.category;
+                    }
+                }
+
+                showAdminMessage('Документ распознан! Проверьте и отредактируйте данные', 'success');
+
+            } catch (error) {
+                console.error('Recognition error:', error);
+                showAdminMessage(error.message || 'Ошибка распознавания документа', 'error');
+            } finally {
+                // Reset drop zone state
+                dropZone.classList.remove('processing');
+                dropZoneContent.style.display = 'block';
+                processingIndicator.style.display = 'none';
+                updateProcessingText('ИИ распознаёт документ...');
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    // Remove data URL prefix to get pure base64
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        async function convertPdfToImages(file) {
+            // Инициализируем PDF.js
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const numPages = pdf.numPages;
+            const images = [];
+
+            // Рендерим каждую страницу
+            for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+                updateProcessingText(`Обработка страницы ${pageNum}/${numPages}...`);
+
+                const page = await pdf.getPage(pageNum);
+                // Масштаб для хорошего качества OCR
+                const scale = 2;
+                const viewport = page.getViewport({ scale });
+
+                // Создаём canvas для рендеринга
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+
+                // Рендерим страницу
+                await page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise;
+
+                // Конвертируем в base64 PNG
+                const dataUrl = canvas.toDataURL('image/png');
+                const base64 = dataUrl.split(',')[1];
+
+                images.push({
+                    data: base64,
+                    mediaType: 'image/png',
+                    pageNumber: pageNum
+                });
+            }
+
+            return images;
+        }
+
+        // Initialize drop zone when DOM is ready
+        document.addEventListener('DOMContentLoaded', initDropZone);
     </script>
 
     <!-- Регистрация Service Worker для PWA -->
