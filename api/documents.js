@@ -125,10 +125,33 @@ export default async function handler(req, res) {
       });
     }
 
-    // DELETE - удаление документа
+    // DELETE - удаление документа или всех документов
     if (req.method === 'DELETE') {
-      const { id } = req.body;
+      const { id, deleteAll } = req.body;
 
+      // Удаление всех документов
+      if (deleteAll === true) {
+        // Сначала получаем количество
+        const { count } = await supabase
+          .from('documents')
+          .select('*', { count: 'exact', head: true });
+
+        // Удаляем все документы
+        const { error } = await supabase
+          .from('documents')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // Удаляем все (обходной путь для Supabase)
+
+        if (error) throw error;
+
+        return res.status(200).json({
+          success: true,
+          message: 'Все документы удалены',
+          deletedCount: count
+        });
+      }
+
+      // Удаление одного документа
       if (!id) {
         return res.status(400).json({ error: 'ID документа обязателен' });
       }
