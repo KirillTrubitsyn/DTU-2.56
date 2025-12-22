@@ -123,16 +123,26 @@ async function searchDocuments(query, limit = 8) {
     // 3. ILIKE fallback search - searches for key words in title and content
     // This is crucial for Russian language where full-text search may fail
     try {
-      // Extract key words from query (words longer than 3 chars)
-      const keyWords = query
-        .toLowerCase()
-        .split(/\s+/)
-        .filter(word => word.length > 3)
-        .slice(0, 3); // Take up to 3 key words
+      // Extract key words from query
+      const words = query.split(/\s+/);
 
-      if (keyWords.length > 0) {
-        // Search for documents containing any of the key words
-        const ilikeQueries = keyWords.map(word => `%${word}%`);
+      // Get meaningful words (longer than 3 chars OR contain digits - for document numbers)
+      const keyWords = words
+        .map(w => w.toLowerCase().replace(/[«»"']/g, '')) // Remove quotes
+        .filter(word => word.length > 3 || /\d/.test(word)) // Keep long words OR words with digits
+        .slice(0, 5); // Take up to 5 key words
+
+      // Also extract document numbers/dates (patterns like 037_2023, 21.02.2023, №123)
+      const docNumbers = query.match(/№?\d+[_\-\/\.]\d+|\d{2}\.\d{2}\.\d{4}|№\s*\d+/g) || [];
+
+      // Combine all search terms
+      const allTerms = [...new Set([...keyWords, ...docNumbers])];
+
+      console.log(`[Search] ILIKE terms: ${allTerms.join(', ')}`);
+
+      if (allTerms.length > 0) {
+        // Search for documents containing any of the terms
+        const ilikeQueries = allTerms.map(term => `%${term}%`);
 
         // Search in title first
         const { data: titleData, error: titleError } = await supabase
