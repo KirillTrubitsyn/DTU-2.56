@@ -2727,28 +2727,6 @@
                 }
             }
 
-            // Футер
-            paragraphs.push(
-                new Paragraph({
-                    children: [new TextRun({ text: '─'.repeat(50), color: 'cccccc' })],
-                    alignment: AlignmentType.CENTER,
-                    spacing: { before: 400, after: 200 }
-                })
-            );
-            paragraphs.push(
-                new Paragraph({
-                    children: [
-                        new TextRun({
-                            text: 'Документ сформирован ИИ-помощником ДТУ • Разработчик: Кирилл Трубицын',
-                            italics: true,
-                            size: 18,
-                            color: '999999'
-                        })
-                    ],
-                    alignment: AlignmentType.CENTER
-                })
-            );
-
             // Создаём документ
             const doc = new Document({
                 sections: [{
