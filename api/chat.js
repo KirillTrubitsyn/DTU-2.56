@@ -76,26 +76,29 @@ async function getEmbedding(text) {
   }
 }
 
-// Hybrid search: combines vector similarity + keyword search
+// Hybrid search: combines vector similarity + keyword search + fallback
 async function searchDocuments(query, limit = 8) {
   try {
     const embedding = await getEmbedding(query);
     let vectorResults = [];
     let keywordResults = [];
+    let fallbackResults = [];
 
     // 1. Vector similarity search (if embedding available)
     if (embedding) {
       const { data, error } = await supabase.rpc('match_documents', {
         query_embedding: embedding,
-        match_threshold: 0.5,  // Lowered from 0.7 for better recall
+        match_threshold: 0.3,  // Lowered to 0.3 for better recall
         match_count: limit
       });
       if (!error && data) {
         vectorResults = data;
+      } else if (error) {
+        console.log('Vector search error:', error.message);
       }
     }
 
-    // 2. Keyword search (always run as supplement)
+    // 2. Keyword search (full-text search)
     try {
       const { data, error } = await supabase
         .from('documents')
@@ -107,31 +110,38 @@ async function searchDocuments(query, limit = 8) {
         keywordResults = data;
       }
     } catch (e) {
-      // Keyword search failed, continue with vector results only
       console.log('Keyword search failed:', e.message);
     }
 
-    // 3. Merge results (vector first, then keyword, deduplicated)
+    // 3. Fallback: simple ILIKE search if both above return nothing
+    if (vectorResults.length === 0 && keywordResults.length === 0) {
+      const searchTerms = query.split(' ').filter(t => t.length > 3).slice(0, 3);
+      for (const term of searchTerms) {
+        const { data, error } = await supabase
+          .from('documents')
+          .select('id, title, content, source')
+          .or(`title.ilike.%${term}%,content.ilike.%${term}%`)
+          .limit(limit);
+
+        if (!error && data && data.length > 0) {
+          fallbackResults = data;
+          break;
+        }
+      }
+    }
+
+    // 4. Merge results (vector first, then keyword, then fallback)
     const seenIds = new Set();
     const merged = [];
 
-    // Add vector results first (higher priority)
-    for (const doc of vectorResults) {
+    for (const doc of [...vectorResults, ...keywordResults, ...fallbackResults]) {
       if (!seenIds.has(doc.id)) {
         seenIds.add(doc.id);
         merged.push(doc);
       }
     }
 
-    // Add keyword results that weren't in vector results
-    for (const doc of keywordResults) {
-      if (!seenIds.has(doc.id)) {
-        seenIds.add(doc.id);
-        merged.push(doc);
-      }
-    }
-
-    console.log(`Search results: ${vectorResults.length} vector + ${keywordResults.length} keyword = ${merged.length} merged`);
+    console.log(`Search: ${vectorResults.length} vector + ${keywordResults.length} keyword + ${fallbackResults.length} fallback = ${merged.length} total`);
 
     return merged.slice(0, limit);
   } catch (error) {
