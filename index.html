@@ -1012,6 +1012,142 @@
             color: var(--text-muted);
             margin-bottom: 1.5rem;
         }
+
+        /* File Upload / Drop Zone Styles */
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 0.75rem;
+            padding: 2rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg);
+            margin-bottom: 1.25rem;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--primary);
+            background: rgba(26, 54, 93, 0.05);
+        }
+
+        .drop-zone.drag-over {
+            border-color: var(--primary);
+            background: rgba(26, 54, 93, 0.1);
+            transform: scale(1.02);
+        }
+
+        .drop-zone.processing {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .drop-zone-icon {
+            width: 48px;
+            height: 48px;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .drop-zone-text {
+            color: var(--text);
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .drop-zone-hint {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .drop-zone input[type="file"] {
+            display: none;
+        }
+
+        .processing-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 1rem;
+        }
+
+        .processing-indicator .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .file-preview {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .file-preview img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .file-preview-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-preview-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-preview-size {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .file-preview-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: color 0.2s;
+        }
+
+        .file-preview-remove:hover {
+            color: var(--weak);
+        }
+
+        .admin-divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.25rem 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .admin-divider::before,
+        .admin-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
     </style>
 </head>
 <body>
@@ -1489,13 +1625,47 @@
 
                 <!-- Upload Form (hidden by default) -->
                 <div id="adminUploadForm" style="display: none;">
+                    <!-- Drop Zone for OCR -->
+                    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                        <input type="file" id="fileInput" accept="image/*,.pdf" onchange="handleFileSelect(event)">
+                        <div id="dropZoneContent">
+                            <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <div class="drop-zone-text">Перетащите файл или нажмите для выбора</div>
+                            <div class="drop-zone-hint">Изображение или PDF — ИИ автоматически распознает текст</div>
+                        </div>
+                        <div id="processingIndicator" class="processing-indicator" style="display: none;">
+                            <div class="spinner"></div>
+                            <span>ИИ распознаёт документ...</span>
+                        </div>
+                    </div>
+
+                    <!-- File Preview -->
+                    <div id="filePreview" class="file-preview" style="display: none;">
+                        <img id="previewImage" src="" alt="Preview">
+                        <div class="file-preview-info">
+                            <div class="file-preview-name" id="previewName"></div>
+                            <div class="file-preview-size" id="previewSize"></div>
+                        </div>
+                        <button class="file-preview-remove" onclick="clearFile()">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="admin-divider">или заполните вручную</div>
+
                     <div class="admin-form-group">
                         <label>Название документа *</label>
                         <input type="text" class="admin-input" id="docTitle" placeholder="Например: Договор поставки №123">
                     </div>
                     <div class="admin-form-group">
                         <label>Содержимое документа *</label>
-                        <textarea class="admin-textarea" id="docContent" placeholder="Вставьте текст документа..."></textarea>
+                        <textarea class="admin-textarea" id="docContent" placeholder="Вставьте текст документа или загрузите файл для OCR..."></textarea>
                     </div>
                     <div class="admin-form-group">
                         <label>Источник</label>
@@ -1514,7 +1684,7 @@
                             <option value="отчет">Отчёт/Мониторинг</option>
                         </select>
                     </div>
-                    <button class="admin-btn" id="uploadBtn" onclick="uploadDocument()">Загрузить документ</button>
+                    <button class="admin-btn" id="uploadBtn" onclick="uploadDocument()">Загрузить документ в базу знаний</button>
                     <button class="admin-btn" style="margin-top: 0.75rem; background: linear-gradient(135deg, #718096 0%, #4a5568 100%);" onclick="adminLogout()">Выйти</button>
                 </div>
             </div>
@@ -1792,6 +1962,7 @@
             document.getElementById('docContent').value = '';
             document.getElementById('docSource').value = '';
             document.getElementById('docCategory').value = 'документ';
+            clearFile();
         }
 
         async function uploadDocument() {
@@ -1843,9 +2014,193 @@
                 showAdminMessage(error.message || 'Ошибка загрузки документа', 'error');
             } finally {
                 uploadBtn.disabled = false;
-                uploadBtn.textContent = 'Загрузить документ';
+                uploadBtn.textContent = 'Загрузить документ в базу знаний';
             }
         }
+
+        // ========== File Upload & OCR Functionality ==========
+
+        let currentFile = null;
+
+        // Initialize drag & drop when admin form is shown
+        function initDropZone() {
+            const dropZone = document.getElementById('dropZone');
+            if (!dropZone) return;
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+            });
+
+            dropZone.addEventListener('drop', handleDrop, false);
+        }
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleDrop(e) {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        async function processFile(file) {
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+            if (!validTypes.includes(file.type)) {
+                showAdminMessage('Поддерживаются только изображения (JPG, PNG, GIF, WebP) и PDF', 'error');
+                return;
+            }
+
+            // Validate file size (max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showAdminMessage('Файл слишком большой. Максимум 10 МБ', 'error');
+                return;
+            }
+
+            currentFile = file;
+            showFilePreview(file);
+            await recognizeDocument(file);
+        }
+
+        function showFilePreview(file) {
+            const preview = document.getElementById('filePreview');
+            const previewImage = document.getElementById('previewImage');
+            const previewName = document.getElementById('previewName');
+            const previewSize = document.getElementById('previewSize');
+
+            previewName.textContent = file.name;
+            previewSize.textContent = formatFileSize(file.size);
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // PDF icon placeholder
+                previewImage.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>');
+            }
+
+            preview.style.display = 'flex';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' Б';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
+        }
+
+        function clearFile() {
+            currentFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('filePreview').style.display = 'none';
+            document.getElementById('previewImage').src = '';
+        }
+
+        async function recognizeDocument(file) {
+            const dropZone = document.getElementById('dropZone');
+            const dropZoneContent = document.getElementById('dropZoneContent');
+            const processingIndicator = document.getElementById('processingIndicator');
+
+            // Show processing state
+            dropZone.classList.add('processing');
+            dropZoneContent.style.display = 'none';
+            processingIndicator.style.display = 'flex';
+
+            try {
+                // Convert file to base64
+                const base64 = await fileToBase64(file);
+
+                // Call recognition API
+                const response = await fetch('/api/recognize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        password: adminPassword,
+                        image: base64,
+                        mediaType: file.type,
+                        fileName: file.name
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showAdminMessage('Неверный пароль', 'error');
+                        adminLogout();
+                        return;
+                    }
+                    throw new Error(data.error || 'Ошибка распознавания');
+                }
+
+                // Fill the form with recognized data
+                if (data.title) {
+                    document.getElementById('docTitle').value = data.title;
+                }
+                if (data.content) {
+                    document.getElementById('docContent').value = data.content;
+                }
+                if (data.source) {
+                    document.getElementById('docSource').value = data.source;
+                }
+                if (data.category) {
+                    const categorySelect = document.getElementById('docCategory');
+                    const option = Array.from(categorySelect.options).find(opt => opt.value === data.category);
+                    if (option) {
+                        categorySelect.value = data.category;
+                    }
+                }
+
+                showAdminMessage('Документ распознан! Проверьте и отредактируйте данные', 'success');
+
+            } catch (error) {
+                console.error('Recognition error:', error);
+                showAdminMessage(error.message || 'Ошибка распознавания документа', 'error');
+            } finally {
+                // Reset drop zone state
+                dropZone.classList.remove('processing');
+                dropZoneContent.style.display = 'block';
+                processingIndicator.style.display = 'none';
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    // Remove data URL prefix to get pure base64
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Initialize drop zone when DOM is ready
+        document.addEventListener('DOMContentLoaded', initDropZone);
     </script>
 
     <!-- Регистрация Service Worker для PWA -->
