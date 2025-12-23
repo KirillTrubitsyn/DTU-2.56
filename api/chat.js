@@ -187,7 +187,7 @@ export default async function handler(req, res) {
 
     // Model configuration
     const modelConfig = {
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.0-pro-preview',
       systemInstruction: SYSTEM_PROMPT,
     };
 
