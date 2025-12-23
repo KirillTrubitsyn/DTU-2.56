@@ -9,30 +9,31 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-// System prompt with case context
-const SYSTEM_PROMPT = `Ты — юридический ИИ-помощник, специализирующийся на деле № А73-19604/2025 АО «Дальтрансуголь» против Приамурского МУ Росприроднадзора.
+// System prompt - relies on app content and knowledge base
+const SYSTEM_PROMPT = `Ты — юридический ИИ-помощник по делу № А73-19604/2025 (АО «Дальтрансуголь» против Приамурского МУ Росприроднадзора).
 
-КОНТЕКСТ ДЕЛА:
-- Компания: АО «Дальтрансуголь» (угольный терминал)
-- Истец: Приамурское МУ Росприроднадзора
-- Сумма иска: 2 562 113 054,91 ₽
-- Суть: возмещение вреда за загрязнение водного объекта (бухта Мучке) угольной пылью
+СУТЬ ДЕЛА: Росприроднадзор взыскивает с ДТУ вред водному объекту (бухта Мучке) за загрязнение угольной пылью. Сумма иска: ~147 млн руб.
 
-ОСНОВНЫЕ ЛИНИИ ЗАЩИТЫ (по силе):
-1. [9/10] Постановление КС РФ № 56-П от 06.12.2024 — суд обязан учитывать фактический вред, не формально применять методики
-2. [8/10] Данные мониторинга ДВФУ 2008-2024 — отсутствие реального экологического вреда
-3. [6/10] Зачёт экологических инвестиций (2 047 545 642 ₽) — п.14 Методики 87
-4. [5/10] Оспаривание коэффициента Кзагр (6 → 1) — диффузное загрязнение
-5. [5/10] Соблюдение нормативов выбросов — концентрации в 10× ниже ПДК
-6. [4/10] Квалификация угольной пыли — выброс ≠ отход
-7. [2/10] Процедурные нарушения — НЕ РЕКОМЕНДУЕТСЯ использовать
+=== ИСТОЧНИКИ ИНФОРМАЦИИ (приоритет) ===
 
-ВАЖНО:
-- Отвечай на русском языке
-- Давай конкретные ссылки на документы и судебные акты
-- Если информация из контекста — укажи источник
-- Если не знаешь точного ответа — скажи об этом честно
-- Будь кратким, но информативным`;
+1. СОДЕРЖАНИЕ ПРИЛОЖЕНИЯ — пользователь имеет доступ к вкладкам:
+   • «Хронология дела» — все ключевые события и документы в хронологическом порядке
+   • «Стратегия защиты» — структурированный анализ аргументов с оценкой силы
+
+   При необходимости направляй пользователя к соответствующей вкладке приложения для детального изучения.
+
+2. ДОКУМЕНТЫ ИЗ БАЗЫ ЗНАНИЙ — дополнительный источник. Используй найденные документы для уточнения деталей, цитат, точных формулировок.
+
+3. ВНЕШНИЕ ИСТОЧНИКИ — используй только если вопрос выходит за рамки дела (общие юридические понятия, актуальная судебная практика, законодательство).
+
+=== ПРАВИЛА ОТВЕТА ===
+
+1. Отвечай опираясь на информацию из вкладок «Хронология дела» и «Стратегия защиты»
+2. Используй ДОКУМЕНТЫ ИЗ БАЗЫ ЗНАНИЙ для уточнения деталей и цитат
+3. НЕ выдумывай факты, даты, номера документов
+4. Если вопрос требует конкретного документа которого нет в базе — честно скажи об этом
+5. Отвечай на русском, кратко и по существу
+6. При ответах о стратегии и аргументах опирайся на документы, а не на предположения`;
 
 // Function to get embeddings using Google or Supabase
 async function getEmbedding(text) {
@@ -56,32 +57,74 @@ async function getEmbedding(text) {
   }
 }
 
-// Function to search relevant documents in Supabase
-async function searchDocuments(query, limit = 5) {
+// Hybrid search: combines vector similarity + keyword search + fallback
+async function searchDocuments(query, limit = 8) {
   try {
     const embedding = await getEmbedding(query);
+    let vectorResults = [];
+    let keywordResults = [];
+    let fallbackResults = [];
 
-    if (!embedding) {
-      // Fallback: simple text search if embeddings fail
+    // 1. Vector similarity search (if embedding available)
+    if (embedding) {
+      const { data, error } = await supabase.rpc('match_documents', {
+        query_embedding: embedding,
+        match_threshold: 0.3,  // Lowered to 0.3 for better recall
+        match_count: limit
+      });
+      if (!error && data) {
+        vectorResults = data;
+      } else if (error) {
+        console.log('Vector search error:', error.message);
+      }
+    }
+
+    // 2. Keyword search (full-text search)
+    try {
       const { data, error } = await supabase
         .from('documents')
         .select('id, title, content, source')
         .textSearch('content', query, { type: 'websearch', config: 'russian' })
         .limit(limit);
 
-      if (error) throw error;
-      return data || [];
+      if (!error && data) {
+        keywordResults = data;
+      }
+    } catch (e) {
+      console.log('Keyword search failed:', e.message);
     }
 
-    // Vector similarity search
-    const { data, error } = await supabase.rpc('match_documents', {
-      query_embedding: embedding,
-      match_threshold: 0.7,
-      match_count: limit
-    });
+    // 3. Fallback: simple ILIKE search if both above return nothing
+    if (vectorResults.length === 0 && keywordResults.length === 0) {
+      const searchTerms = query.split(' ').filter(t => t.length > 3).slice(0, 3);
+      for (const term of searchTerms) {
+        const { data, error } = await supabase
+          .from('documents')
+          .select('id, title, content, source')
+          .or(`title.ilike.%${term}%,content.ilike.%${term}%`)
+          .limit(limit);
 
-    if (error) throw error;
-    return data || [];
+        if (!error && data && data.length > 0) {
+          fallbackResults = data;
+          break;
+        }
+      }
+    }
+
+    // 4. Merge results (vector first, then keyword, then fallback)
+    const seenIds = new Set();
+    const merged = [];
+
+    for (const doc of [...vectorResults, ...keywordResults, ...fallbackResults]) {
+      if (!seenIds.has(doc.id)) {
+        seenIds.add(doc.id);
+        merged.push(doc);
+      }
+    }
+
+    console.log(`Search: ${vectorResults.length} vector + ${keywordResults.length} keyword + ${fallbackResults.length} fallback = ${merged.length} total`);
+
+    return merged.slice(0, limit);
   } catch (error) {
     console.error('Search error:', error);
     return [];
@@ -91,14 +134,14 @@ async function searchDocuments(query, limit = 5) {
 // Format documents as context
 function formatContext(documents) {
   if (!documents || documents.length === 0) {
-    return '';
+    return '\n\n[ДОКУМЕНТЫ ИЗ БАЗЫ ЗНАНИЙ: не найдено релевантных документов]';
   }
 
   const context = documents.map((doc, i) =>
-    `[Документ ${i + 1}: ${doc.title || 'Без названия'}]\n${doc.content}`
+    `[Документ ${i + 1}: "${doc.title || 'Без названия'}"]\nИсточник: ${doc.source || 'не указан'}\nСодержание:\n${doc.content}`
   ).join('\n\n---\n\n');
 
-  return `\n\nРЕЛЕВАНТНЫЕ ДОКУМЕНТЫ ИЗ БАЗЫ:\n${context}`;
+  return `\n\n=== ДОКУМЕНТЫ ИЗ БАЗЫ ЗНАНИЙ (${documents.length} шт.) ===\n\n${context}\n\n=== КОНЕЦ ДОКУМЕНТОВ ===`;
 }
 
 // Convert history to Gemini format
@@ -125,7 +168,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message, history = [] } = req.body;
+    const { message, history = [], appContext = '' } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
@@ -133,11 +176,18 @@ export default async function handler(req, res) {
 
     // Search for relevant documents
     const documents = await searchDocuments(message);
-    const contextAddition = formatContext(documents);
+    const knowledgeBaseContext = formatContext(documents);
+
+    // Build full context: app content first, then knowledge base
+    let fullContext = '';
+    if (appContext) {
+      fullContext += `\n\n=== СОДЕРЖАНИЕ ПРИЛОЖЕНИЯ ===\n${appContext}`;
+    }
+    fullContext += knowledgeBaseContext;
 
     // Initialize Gemini model with system instruction
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       systemInstruction: SYSTEM_PROMPT,
     });
 
@@ -147,7 +197,7 @@ export default async function handler(req, res) {
     });
 
     // Send message with context
-    const result = await chat.sendMessage(message + contextAddition);
+    const result = await chat.sendMessage(message + fullContext);
     const response = await result.response;
     const assistantMessage = response.text();
 

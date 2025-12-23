@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Юридический ИИ-помощник для дела АО Дальтрансуголь с RAG (Google Gemini)",
+  "author": "Кирилл Трубицын",
   "scripts": {
     "dev": "vercel dev",
     "build": "echo 'No build step required'",
