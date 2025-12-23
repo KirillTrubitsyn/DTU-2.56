@@ -2086,6 +2086,231 @@
             vertical-align: middle;
         }
 
+        /* Timeline Layout with Sidebar */
+        .timeline-layout {
+            display: flex;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .timeline-sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 80px;
+            height: fit-content;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .timeline-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Calendar Navigation */
+        .calendar-nav {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .calendar-legend {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+        }
+
+        .calendar-legend-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+
+        .calendar-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0;
+            font-size: 0.8rem;
+            color: var(--text);
+        }
+
+        .calendar-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .calendar-legend-dot.positive { background: var(--strong); }
+        .calendar-legend-dot.negative { background: var(--weak); }
+        .calendar-legend-dot.neutral { background: var(--medium); }
+        .calendar-legend-dot.key { background: var(--accent-gold); }
+        .calendar-legend-dot.upcoming { background: #6366f1; }
+
+        .calendar-years {
+            padding: 0.5rem;
+        }
+
+        .calendar-year {
+            margin-bottom: 0.25rem;
+        }
+
+        .calendar-year-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 0.75rem;
+            background: var(--bg);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+
+        .calendar-year-header:hover {
+            background: var(--primary-light);
+            color: white;
+        }
+
+        .calendar-year-header .year-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .calendar-year-header .event-dots {
+            display: flex;
+            gap: 2px;
+        }
+
+        .calendar-year-header .event-dots .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .calendar-year-header svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s;
+        }
+
+        .calendar-year.collapsed .calendar-year-header svg {
+            transform: rotate(-90deg);
+        }
+
+        .calendar-year-events {
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.2s ease;
+            opacity: 1;
+        }
+
+        .calendar-year.collapsed .calendar-year-events {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .calendar-event {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem 0.5rem 1.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+        }
+
+        .calendar-event:hover {
+            background: var(--bg);
+            color: var(--text);
+            border-left-color: var(--primary);
+        }
+
+        .calendar-event .event-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .calendar-event .event-dot.positive { background: var(--strong); }
+        .calendar-event .event-dot.negative { background: var(--weak); }
+        .calendar-event .event-dot.neutral { background: var(--medium); }
+        .calendar-event .event-dot.key { background: var(--accent-gold); }
+        .calendar-event .event-dot.upcoming { background: #6366f1; }
+
+        .calendar-event .event-date {
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+        }
+
+        .calendar-event .event-title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Event highlight animation */
+        .timeline-item.highlighted .timeline-card {
+            animation: highlight-pulse 0.5s ease-out 3;
+            box-shadow: 0 0 0 3px var(--accent-gold), 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        @keyframes highlight-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        /* Mobile: hide sidebar */
+        @media (max-width: 1024px) {
+            .timeline-layout {
+                flex-direction: column;
+            }
+
+            .timeline-sidebar {
+                width: 100%;
+                position: static;
+                max-height: none;
+            }
+
+            .calendar-nav {
+                margin-bottom: 1rem;
+            }
+
+            .calendar-years {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .calendar-year {
+                flex: 1;
+                min-width: 150px;
+            }
+        }
+
         @media (max-width: 768px) {
             .main-tabs {
                 flex-wrap: wrap;
@@ -2785,7 +3010,216 @@
 
     <!-- Timeline Tab Content -->
     <div class="main-tab-content" id="timelineContent">
-        <div class="timeline-container">
+        <div class="timeline-layout">
+
+            <!-- Calendar Sidebar -->
+            <aside class="timeline-sidebar">
+                <nav class="calendar-nav">
+                    <div class="calendar-header">Навигация по датам</div>
+
+                    <!-- Color Legend -->
+                    <div class="calendar-legend">
+                        <div class="calendar-legend-title">Обозначения</div>
+                        <div class="calendar-legend-item">
+                            <span class="calendar-legend-dot positive"></span>
+                            <span>Положительное событие (успех защиты)</span>
+                        </div>
+                        <div class="calendar-legend-item">
+                            <span class="calendar-legend-dot negative"></span>
+                            <span>Негативное событие (решение против)</span>
+                        </div>
+                        <div class="calendar-legend-item">
+                            <span class="calendar-legend-dot neutral"></span>
+                            <span>Нейтральное событие</span>
+                        </div>
+                        <div class="calendar-legend-item">
+                            <span class="calendar-legend-dot key"></span>
+                            <span>Ключевое событие</span>
+                        </div>
+                        <div class="calendar-legend-item">
+                            <span class="calendar-legend-dot upcoming"></span>
+                            <span>Предстоящее событие</span>
+                        </div>
+                    </div>
+
+                    <!-- Years Navigation -->
+                    <div class="calendar-years">
+
+                        <!-- 2021 -->
+                        <div class="calendar-year collapsed">
+                            <div class="calendar-year-header" onclick="toggleCalendarYear(this)">
+                                <span class="year-label">2021</span>
+                                <div class="event-dots">
+                                    <span class="dot" style="background: var(--strong)"></span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </div>
+                            <div class="calendar-year-events">
+                                <div class="calendar-event" onclick="scrollToEvent('event-2021-07-21')">
+                                    <span class="event-dot positive"></span>
+                                    <span class="event-date">21.07</span>
+                                    <span class="event-title">Заключение ГЭЭ</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2023 -->
+                        <div class="calendar-year collapsed">
+                            <div class="calendar-year-header" onclick="toggleCalendarYear(this)">
+                                <span class="year-label">2023</span>
+                                <div class="event-dots">
+                                    <span class="dot" style="background: var(--weak)"></span>
+                                    <span class="dot" style="background: var(--strong)"></span>
+                                    <span class="dot" style="background: var(--accent-gold)"></span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </div>
+                            <div class="calendar-year-events">
+                                <div class="calendar-event" onclick="scrollToEvent('event-2023-01-24')">
+                                    <span class="event-dot neutral"></span>
+                                    <span class="event-date">24.01</span>
+                                    <span class="event-title">Обращение гражданина</span>
+                                </div>
+                                <div class="calendar-event" onclick="scrollToEvent('event-2023-02-08')">
+                                    <span class="event-dot negative"></span>
+                                    <span class="event-date">08.02</span>
+                                    <span class="event-title">Выездное обследование</span>
+                                </div>
+                                <div class="calendar-event" onclick="scrollToEvent('event-2023-02-21')">
+                                    <span class="event-dot key"></span>
+                                    <span class="event-date">21.02</span>
+                                    <span class="event-title">Решение о проверке</span>
+                                </div>
+                                <div class="calendar-event" onclick="scrollToEvent('event-2023-03-01')">
+                                    <span class="event-dot negative"></span>
+                                    <span class="event-date">01.03</span>
+                                    <span class="event-title">Начало проверки</span>
+                                </div>
+                                <div class="calendar-event" onclick="scrollToEvent('event-2023-03-20')">
+                                    <span class="event-dot key"></span>
+                                    <span class="event-date">20.03</span>
+                                    <span class="event-title">Площадь загрязнения</span>
+                                </div>
+                                <div class="calendar-event" onclick="scrollToEvent('event-2023-03-23')">
+                                    <span class="event-dot negative"></span>
+                                    <span class="event-date">23.03</span>
+                                    <span class="event-title">Акт проверки</span>
+                                </div>
+                                <div class="calendar-event" onclick="scrollToEvent('event-2023-06-15')">
+                                    <span class="event-dot positive"></span>
+                                    <span class="event-date">15.06</span>
+                                    <span class="event-title">Отмена постановления</span>
+                                </div>
+                                <div class="calendar-event" onclick="scrollToEvent('event-2023-07-18')">
+                                    <span class="event-dot positive"></span>
+                                    <span class="event-date">18.07</span>
+                                    <span class="event-title">УралНИИ: пыль ≠ отход</span>
+                                </div>
+                                <div class="calendar-event" onclick="scrollToEvent('event-2023-10-09')">
+                                    <span class="event-dot key"></span>
+                                    <span class="event-date">09.10</span>
+                                    <span class="event-title">Письмо Генпрокуратуры</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2024 -->
+                        <div class="calendar-year collapsed">
+                            <div class="calendar-year-header" onclick="toggleCalendarYear(this)">
+                                <span class="year-label">2024</span>
+                                <div class="event-dots">
+                                    <span class="dot" style="background: var(--weak)"></span>
+                                    <span class="dot" style="background: var(--accent-gold)"></span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </div>
+                            <div class="calendar-year-events">
+                                <div class="calendar-event" onclick="scrollToEvent('event-2024-02-06')">
+                                    <span class="event-dot negative"></span>
+                                    <span class="event-date">06.02</span>
+                                    <span class="event-title">Итоговые штрафы</span>
+                                </div>
+                                <div class="calendar-event" onclick="scrollToEvent('event-2024-12-06')">
+                                    <span class="event-dot key"></span>
+                                    <span class="event-date">06.12</span>
+                                    <span class="event-title">Постановление КС РФ</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2025 -->
+                        <div class="calendar-year">
+                            <div class="calendar-year-header" onclick="toggleCalendarYear(this)">
+                                <span class="year-label">2025</span>
+                                <div class="event-dots">
+                                    <span class="dot" style="background: var(--accent-gold)"></span>
+                                    <span class="dot" style="background: var(--strong)"></span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </div>
+                            <div class="calendar-year-events">
+                                <div class="calendar-event" onclick="scrollToEvent('event-2025-05-23')">
+                                    <span class="event-dot positive"></span>
+                                    <span class="event-date">23.05</span>
+                                    <span class="event-title">Снижение штрафа</span>
+                                </div>
+                                <div class="calendar-event" onclick="scrollToEvent('event-2025-10-17')">
+                                    <span class="event-dot key"></span>
+                                    <span class="event-date">17.10</span>
+                                    <span class="event-title">Претензия 2,5 млрд</span>
+                                </div>
+                                <div class="calendar-event" onclick="scrollToEvent('event-2025-11-19')">
+                                    <span class="event-dot key"></span>
+                                    <span class="event-date">19.11</span>
+                                    <span class="event-title">Иск Росприроднадзора</span>
+                                </div>
+                                <div class="calendar-event" onclick="scrollToEvent('event-2025-12-10')">
+                                    <span class="event-dot positive"></span>
+                                    <span class="event-date">10.12</span>
+                                    <span class="event-title">Минтранс: нет технологий</span>
+                                </div>
+                                <div class="calendar-event" onclick="scrollToEvent('event-2025-12-23')">
+                                    <span class="event-dot neutral"></span>
+                                    <span class="event-date">23.12</span>
+                                    <span class="event-title">Предв. заседание</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2026 -->
+                        <div class="calendar-year">
+                            <div class="calendar-year-header" onclick="toggleCalendarYear(this)">
+                                <span class="year-label">2026</span>
+                                <div class="event-dots">
+                                    <span class="dot" style="background: #6366f1"></span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </div>
+                            <div class="calendar-year-events">
+                                <div class="calendar-event" onclick="scrollToEvent('event-2026-01-22')">
+                                    <span class="event-dot upcoming"></span>
+                                    <span class="event-date">22.01</span>
+                                    <span class="event-title">Суд. заседание</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Timeline Content -->
+            <main class="timeline-main">
 
             <!-- Section I -->
             <div class="timeline-section collapsed">
@@ -3187,7 +3621,7 @@
                         </div>
                     </div>
 
-                    <div class="timeline-item key">
+                    <div class="timeline-item key" id="event-2024-12-06">
                         <div class="timeline-card">
                             <span class="timeline-date">6 декабря 2024 г.</span>
                             <div class="timeline-title">Постановление Конституционного Суда РФ № 56-П</div>
@@ -3331,7 +3765,7 @@
                         </div>
                     </div>
 
-                    <div class="timeline-item upcoming">
+                    <div class="timeline-item upcoming" id="event-2026-01-22">
                         <div class="timeline-card">
                             <span class="timeline-date">22 января 2026 г. <span class="upcoming-badge">Предстоит</span></span>
                             <div class="timeline-title">Предварительное судебное заседание по иску Росприроднадзора</div>
@@ -3349,6 +3783,7 @@
                 </div>
             </div>
 
+            </main>
         </div>
     </div>
 
@@ -3470,6 +3905,34 @@
             const toggleSpan = header.querySelector('.timeline-card-toggle span');
             if (toggleSpan) {
                 toggleSpan.textContent = item.classList.contains('collapsed') ? 'Показать' : 'Скрыть';
+            }
+        }
+
+        // ========== Calendar Navigation Functions ==========
+        function toggleCalendarYear(header) {
+            const year = header.closest('.calendar-year');
+            year.classList.toggle('collapsed');
+        }
+
+        function scrollToEvent(eventId) {
+            const event = document.getElementById(eventId);
+            if (event) {
+                // Expand parent section if collapsed
+                const section = event.closest('.timeline-section');
+                if (section && section.classList.contains('collapsed')) {
+                    section.classList.remove('collapsed');
+                }
+
+                // Scroll to event with offset for sticky header
+                setTimeout(() => {
+                    const yOffset = -100;
+                    const y = event.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+
+                    // Highlight the event
+                    event.classList.add('highlighted');
+                    setTimeout(() => event.classList.remove('highlighted'), 2000);
+                }, 100);
             }
         }
 
