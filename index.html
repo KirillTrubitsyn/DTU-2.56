@@ -867,46 +867,6 @@
             align-items: center;
             gap: 0.5rem;
         }
-        .web-search-toggle {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            cursor: pointer;
-        }
-        .web-search-toggle input {
-            display: none;
-        }
-        .web-search-toggle .toggle-switch {
-            width: 36px;
-            height: 20px;
-            background: var(--border);
-            border-radius: 10px;
-            position: relative;
-            transition: background 0.2s;
-        }
-        .web-search-toggle .toggle-switch::after {
-            content: '';
-            position: absolute;
-            width: 16px;
-            height: 16px;
-            background: white;
-            border-radius: 50%;
-            top: 2px;
-            left: 2px;
-            transition: transform 0.2s;
-        }
-        .web-search-toggle input:checked + .toggle-switch {
-            background: var(--primary);
-        }
-        .web-search-toggle input:checked + .toggle-switch::after {
-            transform: translateX(16px);
-        }
-        .web-search-toggle span {
-            user-select: none;
-        }
-
         /* Web sources styling */
         .web-sources {
             margin-top: 0.5rem;
@@ -4619,13 +4579,6 @@
                     </div>
                 </div>
             </div>
-            <div class="chat-options">
-                <label class="web-search-toggle">
-                    <input type="checkbox" id="webSearchToggle">
-                    <div class="toggle-switch"></div>
-                    <span>🌐 Поиск в интернете</span>
-                </label>
-            </div>
             <div class="chat-input-area">
                 <div class="chat-input-wrapper">
                     <input
@@ -4645,6 +4598,18 @@
                                     <path d="M12 6v6l4 2"/>
                                 </svg>
                                 Думать дольше
+                            </span>
+                        </label>
+                        <label class="think-longer-toggle" title="Поиск актуальной информации в интернете">
+                            <input type="checkbox" id="webSearchToggle">
+                            <span class="toggle-switch"></span>
+                            <span class="toggle-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="2" y1="12" x2="22" y2="12"/>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                                </svg>
+                                Поиск в сети
                             </span>
                         </label>
                     </div>
