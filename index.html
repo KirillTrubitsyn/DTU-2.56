@@ -1950,6 +1950,142 @@
             font-size: 0.75rem;
         }
 
+        /* Timeline Section Accordion */
+        .timeline-section-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0;
+            box-shadow: 0 4px 12px rgba(26, 54, 93, 0.2);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .timeline-section-header:hover {
+            box-shadow: 0 6px 16px rgba(26, 54, 93, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .timeline-section-header .section-toggle {
+            width: 24px;
+            height: 24px;
+            transition: transform 0.3s ease;
+        }
+
+        .timeline-section.collapsed .timeline-section-header .section-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .timeline-section-header .event-count {
+            background: rgba(255,255,255,0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            margin-left: auto;
+            margin-right: 1rem;
+        }
+
+        .timeline-section-body {
+            max-height: 5000px;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease, margin 0.3s ease;
+            opacity: 1;
+            margin-top: 1.5rem;
+        }
+
+        .timeline-section.collapsed .timeline-section-body {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+        }
+
+        /* Timeline Item Accordion */
+        .timeline-card-header {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timeline-card-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed var(--border);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .timeline-card-toggle:hover {
+            color: var(--primary);
+        }
+
+        .timeline-card-toggle svg {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .timeline-item.collapsed .timeline-card-toggle svg {
+            transform: rotate(-90deg);
+        }
+
+        .timeline-card-body {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.2s ease;
+            opacity: 1;
+            margin-top: 0.75rem;
+        }
+
+        .timeline-item.collapsed .timeline-card-body {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+        }
+
+        /* Upcoming event style */
+        .timeline-item.upcoming::before {
+            background: #6366f1;
+            animation: pulse-upcoming 2s infinite;
+        }
+
+        .timeline-item.upcoming .timeline-card {
+            border-left-color: #6366f1;
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+        }
+
+        .timeline-item.upcoming .timeline-date {
+            background: #6366f1;
+        }
+
+        @keyframes pulse-upcoming {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+        }
+
+        .upcoming-badge {
+            display: inline-block;
+            background: #6366f1;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
         @media (max-width: 768px) {
             .main-tabs {
                 flex-wrap: wrap;
@@ -2652,60 +2788,95 @@
         <div class="timeline-container">
 
             <!-- Section I -->
-            <div class="timeline-section">
-                <div class="timeline-section-title">I. Период стабильной деятельности (2008–2022)</div>
-                <div class="timeline">
+            <div class="timeline-section collapsed">
+                <div class="timeline-section-header" onclick="toggleTimelineSection(this)">
+                    <span>I. Период стабильной деятельности (2008–2022)</span>
+                    <span class="event-count">2 события</span>
+                    <svg class="section-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </div>
+                <div class="timeline-section-body">
+                    <div class="timeline">
 
-                    <div class="timeline-item key">
-                        <div class="timeline-card">
-                            <span class="timeline-date">2008 — 2024 гг.</span>
-                            <div class="timeline-title">Многолетний экологический мониторинг экосистемы бухты Мучке</div>
-                            <div class="timeline-description">
-                                На протяжении более чем 16 лет Дальневосточный федеральный университет (ДВФУ) проводил систематический мониторинг экологического состояния водных биологических ресурсов в зоне воздействия угольного терминала АО «Дальтрансуголь». Исследования включали бентосные съёмки, подводную видеосъёмку, анализ состояния зообентоса, фитобентоса и макрозообентоса. По результатам всех исследований установлено благополучное состояние донных ценозов и отсутствие негативного влияния терминала на водные биоресурсы.
-                            </div>
-                            <div class="timeline-significance">
-                                <div class="timeline-significance-label">Значение</div>
-                                <div class="timeline-significance-text">Ключевое доказательство отсутствия реального экологического вреда. Данные мониторинга опровергают презумпцию причинения вреда экосистеме и служат основанием для применения Постановления КС РФ № 56-П.</div>
-                            </div>
-                            <div class="timeline-docs">
-                                <div class="timeline-docs-label">Документы:</div>
-                                <ul class="timeline-docs-list">
-                                    <li>Отчет о НИР по данным бентосной съемки апрель 2023 г.pdf</li>
-                                    <li>Экспертное заключение ДВФУ по результатам анализа данных отчетов о НИР за 2008-2020 гг.</li>
-                                    <li>Экспертное заключение ДВФУ по результатам исследования отчетов о НИР за 2024 г.</li>
-                                </ul>
+                        <div class="timeline-item key">
+                            <div class="timeline-card">
+                                <div class="timeline-card-header" onclick="toggleTimelineItem(this)">
+                                    <span class="timeline-date">2008 — 2024 гг.</span>
+                                    <div class="timeline-title">Многолетний экологический мониторинг экосистемы бухты Мучке</div>
+                                    <div class="timeline-card-toggle">
+                                        <span>Подробнее</span>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M6 9l6 6 6-6"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="timeline-card-body">
+                                    <div class="timeline-description">
+                                        На протяжении более чем 16 лет Дальневосточный федеральный университет (ДВФУ) проводил систематический мониторинг экологического состояния водных биологических ресурсов в зоне воздействия угольного терминала АО «Дальтрансуголь». Исследования включали бентосные съёмки, подводную видеосъёмку, анализ состояния зообентоса, фитобентоса и макрозообентоса. По результатам всех исследований установлено благополучное состояние донных ценозов и отсутствие негативного влияния терминала на водные биоресурсы.
+                                    </div>
+                                    <div class="timeline-significance">
+                                        <div class="timeline-significance-label">Значение</div>
+                                        <div class="timeline-significance-text">Ключевое доказательство отсутствия реального экологического вреда. Данные мониторинга опровергают презумпцию причинения вреда экосистеме и служат основанием для применения Постановления КС РФ № 56-П.</div>
+                                    </div>
+                                    <div class="timeline-docs">
+                                        <div class="timeline-docs-label">Документы:</div>
+                                        <ul class="timeline-docs-list">
+                                            <li>Отчет о НИР по данным бентосной съемки апрель 2023 г.pdf</li>
+                                            <li>Экспертное заключение ДВФУ по результатам анализа данных отчетов о НИР за 2008-2020 гг.</li>
+                                            <li>Экспертное заключение ДВФУ по результатам исследования отчетов о НИР за 2024 г.</li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="timeline-item positive">
-                        <div class="timeline-card">
-                            <span class="timeline-date">21 июля 2021 г.</span>
-                            <div class="timeline-title">Положительное заключение государственной экологической экспертизы № 291-О</div>
-                            <div class="timeline-description">
-                                Утверждено положительное заключение государственной экологической экспертизы на деятельность АО «Дальтрансуголь» с объёмом перевалки до 24 млн тонн угля в год. Экспертиза подтвердила соответствие деятельности предприятия требованиям природоохранного законодательства.
-                            </div>
-                            <div class="timeline-significance">
-                                <div class="timeline-significance-label">Значение</div>
-                                <div class="timeline-significance-text">Подтверждает легитимность хозяйственной деятельности в утверждённых пределах. Деятельность в рамках согласованных нормативов не может служить основанием для возмещения вреда.</div>
-                            </div>
-                            <div class="timeline-docs">
-                                <div class="timeline-docs-label">Документы:</div>
-                                <ul class="timeline-docs-list">
-                                    <li>Заключение ГЭЭ № 291-О от 21.07.2021</li>
-                                    <li>Проекты нормативов допустимых выбросов (4 тома)</li>
-                                </ul>
+                        <div class="timeline-item positive">
+                            <div class="timeline-card">
+                                <div class="timeline-card-header" onclick="toggleTimelineItem(this)">
+                                    <span class="timeline-date">21 июля 2021 г.</span>
+                                    <div class="timeline-title">Положительное заключение государственной экологической экспертизы № 291-О</div>
+                                    <div class="timeline-card-toggle">
+                                        <span>Подробнее</span>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M6 9l6 6 6-6"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="timeline-card-body">
+                                    <div class="timeline-description">
+                                        Утверждено положительное заключение государственной экологической экспертизы на деятельность АО «Дальтрансуголь» с объёмом перевалки до 24 млн тонн угля в год. Экспертиза подтвердила соответствие деятельности предприятия требованиям природоохранного законодательства.
+                                    </div>
+                                    <div class="timeline-significance">
+                                        <div class="timeline-significance-label">Значение</div>
+                                        <div class="timeline-significance-text">Подтверждает легитимность хозяйственной деятельности в утверждённых пределах. Деятельность в рамках согласованных нормативов не может служить основанием для возмещения вреда.</div>
+                                    </div>
+                                    <div class="timeline-docs">
+                                        <div class="timeline-docs-label">Документы:</div>
+                                        <ul class="timeline-docs-list">
+                                            <li>Заключение ГЭЭ № 291-О от 21.07.2021</li>
+                                            <li>Проекты нормативов допустимых выбросов (4 тома)</li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
+                    </div>
                 </div>
             </div>
 
             <!-- Section II -->
-            <div class="timeline-section">
-                <div class="timeline-section-title">II. 2023 год: Проверки и начало правового конфликта</div>
-                <div class="timeline">
+            <div class="timeline-section collapsed">
+                <div class="timeline-section-header" onclick="toggleTimelineSection(this)">
+                    <span>II. 2023 год: Проверки и начало правового конфликта</span>
+                    <span class="event-count">16 событий</span>
+                    <svg class="section-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </div>
+                <div class="timeline-section-body">
+                    <div class="timeline">
 
                     <div class="timeline-item neutral">
                         <div class="timeline-card">
@@ -2946,13 +3117,21 @@
                         </div>
                     </div>
 
+                    </div>
                 </div>
             </div>
 
             <!-- Section III -->
-            <div class="timeline-section">
-                <div class="timeline-section-title">III. 2024 год: Закрепление штрафов и судебная карусель</div>
-                <div class="timeline">
+            <div class="timeline-section collapsed">
+                <div class="timeline-section-header" onclick="toggleTimelineSection(this)">
+                    <span>III. 2024 год: Закрепление штрафов и судебная карусель</span>
+                    <span class="event-count">7 событий</span>
+                    <svg class="section-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </div>
+                <div class="timeline-section-body">
+                    <div class="timeline">
 
                     <div class="timeline-item negative">
                         <div class="timeline-card">
@@ -3036,13 +3215,21 @@
                         </div>
                     </div>
 
+                    </div>
                 </div>
             </div>
 
             <!-- Section IV -->
             <div class="timeline-section">
-                <div class="timeline-section-title">IV. 2025 год: Иск на 2,5 миллиарда и продолжение судебных споров</div>
-                <div class="timeline">
+                <div class="timeline-section-header" onclick="toggleTimelineSection(this)">
+                    <span>IV. 2025–2026 год: Иск на 2,5 миллиарда и судебные споры</span>
+                    <span class="event-count">9 событий</span>
+                    <svg class="section-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </div>
+                <div class="timeline-section-body">
+                    <div class="timeline">
 
                     <div class="timeline-item negative">
                         <div class="timeline-card">
@@ -3144,6 +3331,21 @@
                         </div>
                     </div>
 
+                    <div class="timeline-item upcoming">
+                        <div class="timeline-card">
+                            <span class="timeline-date">22 января 2026 г. <span class="upcoming-badge">Предстоит</span></span>
+                            <div class="timeline-title">Предварительное судебное заседание по иску Росприроднадзора</div>
+                            <div class="timeline-description">
+                                Назначено предварительное судебное заседание по делу № А73-19604/2025 о взыскании с АО «Дальтрансуголь» возмещения вреда водному объекту в размере 2 562 113 054,91 рублей. Судья Татаринов В.А.
+                            </div>
+                            <div class="timeline-significance">
+                                <div class="timeline-significance-label">Значение</div>
+                                <div class="timeline-significance-text">Ключевое заседание для представления позиции защиты и экспертных заключений, опровергающих причинение реального экологического вреда.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    </div>
                 </div>
             </div>
 
@@ -3252,6 +3454,23 @@
 
             // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ========== Timeline Accordion Functions ==========
+        function toggleTimelineSection(header) {
+            const section = header.closest('.timeline-section');
+            section.classList.toggle('collapsed');
+        }
+
+        function toggleTimelineItem(header) {
+            const item = header.closest('.timeline-item');
+            item.classList.toggle('collapsed');
+
+            // Update toggle text
+            const toggleSpan = header.querySelector('.timeline-card-toggle span');
+            if (toggleSpan) {
+                toggleSpan.textContent = item.classList.contains('collapsed') ? 'Показать' : 'Скрыть';
+            }
         }
 
         function toggleCard(card) {
