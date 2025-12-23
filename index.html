@@ -4363,8 +4363,36 @@
             });
         }
 
-        // Initialize accordions on page load
-        document.addEventListener('DOMContentLoaded', initTimelineAccordions);
+        // Reverse timeline sections order (newest first)
+        function reverseTimelineSections() {
+            const main = document.querySelector('.timeline-main');
+            if (!main) return;
+
+            const sections = Array.from(main.querySelectorAll('.timeline-section'));
+            sections.reverse().forEach(section => main.appendChild(section));
+
+            // Expand first section (newest events)
+            const firstSection = main.querySelector('.timeline-section');
+            if (firstSection) {
+                firstSection.classList.remove('collapsed');
+            }
+        }
+
+        // Reverse calendar years order (newest first)
+        function reverseCalendarYears() {
+            const container = document.querySelector('.calendar-years');
+            if (!container) return;
+
+            const years = Array.from(container.querySelectorAll('.calendar-year'));
+            years.reverse().forEach(year => container.appendChild(year));
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initTimelineAccordions();
+            reverseTimelineSections();
+            reverseCalendarYears();
+        });
 
         // ========== Calendar Navigation Functions ==========
         function toggleCalendarYear(header) {
