@@ -799,25 +799,41 @@
             color: var(--text-muted);
         }
 
-        .chat-message.assistant .sources strong {
+        .chat-message.assistant .sources-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
             color: var(--primary);
+            font-weight: 500;
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 0.8rem;
+        }
+        .chat-message.assistant .sources-toggle:hover {
+            text-decoration: underline;
+        }
+        .chat-message.assistant .sources-toggle svg {
+            width: 14px;
+            height: 14px;
+            transition: transform 0.2s;
+        }
+        .chat-message.assistant .sources-toggle.open svg {
+            transform: rotate(90deg);
+        }
+        .chat-message.assistant .sources-list {
+            display: none;
+            margin-top: 0.5rem;
+            padding-left: 0.5rem;
+            border-left: 2px solid var(--border);
+        }
+        .chat-message.assistant .sources-list.open {
             display: block;
-            margin-bottom: 0.25rem;
         }
-
-        .chat-message.assistant .sources.no-sources {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .chat-message.assistant .sources ul {
-            margin: 0;
-            padding-left: 1.25rem;
-            list-style: disc;
-        }
-
-        .chat-message.assistant .sources li {
-            margin: 0.125rem 0;
+        .chat-message.assistant .sources-list li {
+            margin: 0.25rem 0;
+            list-style: none;
         }
 
         .chat-message.typing {
@@ -5151,6 +5167,12 @@
             setTimeout(() => errorDiv.remove(), 5000);
         }
 
+        function toggleSources(id, btn) {
+            const list = document.getElementById(id);
+            list.classList.toggle('open');
+            btn.classList.toggle('open');
+        }
+
         async function sendMessage() {
             const input = document.getElementById('chatInput');
             const sendButton = document.getElementById('sendButton');
@@ -5190,11 +5212,21 @@
 
                 let responseContent = data.response;
 
-                // Build sources HTML (will be appended after markdown formatting)
+                // Build sources HTML as collapsible accordion
                 let sourcesHtml = '';
                 if (data.sources && data.sources.length > 0) {
-                    const sourcesList = data.sources.map(s => `<li>${s}</li>`).join('');
-                    sourcesHtml = `<div class="sources"><strong>📚 Использованы документы из базы знаний:</strong><ul>${sourcesList}</ul></div>`;
+                    const sourcesList = data.sources.map(s => `<li>📄 ${s}</li>`).join('');
+                    const sourcesId = 'sources_' + Date.now();
+                    sourcesHtml = `
+                        <div class="sources">
+                            <button class="sources-toggle" onclick="toggleSources('${sourcesId}', this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 18l6-6-6-6"/>
+                                </svg>
+                                📚 Использованы документы из базы знаний (${data.sources.length})
+                            </button>
+                            <ul class="sources-list" id="${sourcesId}">${sourcesList}</ul>
+                        </div>`;
                 }
 
                 addMessage(responseContent, 'assistant', sourcesHtml);
