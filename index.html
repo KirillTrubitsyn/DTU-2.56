@@ -858,6 +858,103 @@
             40% { transform: scale(1); }
         }
 
+        /* Web search toggle */
+        .chat-options {
+            padding: 0.5rem 1rem;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .web-search-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .web-search-toggle input {
+            display: none;
+        }
+        .web-search-toggle .toggle-switch {
+            width: 36px;
+            height: 20px;
+            background: var(--border);
+            border-radius: 10px;
+            position: relative;
+            transition: background 0.2s;
+        }
+        .web-search-toggle .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+        .web-search-toggle input:checked + .toggle-switch {
+            background: var(--primary);
+        }
+        .web-search-toggle input:checked + .toggle-switch::after {
+            transform: translateX(16px);
+        }
+        .web-search-toggle span {
+            user-select: none;
+        }
+
+        /* Web sources styling */
+        .web-sources {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed var(--border);
+        }
+        .web-sources-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            color: #0066cc;
+            font-weight: 500;
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 0.8rem;
+        }
+        .web-sources-toggle:hover {
+            text-decoration: underline;
+        }
+        .web-sources-toggle svg {
+            width: 14px;
+            height: 14px;
+            transition: transform 0.2s;
+        }
+        .web-sources-toggle.open svg {
+            transform: rotate(90deg);
+        }
+        .web-sources-list {
+            display: none;
+            margin-top: 0.5rem;
+            padding-left: 0.5rem;
+        }
+        .web-sources-list.open {
+            display: block;
+        }
+        .web-sources-list a {
+            display: block;
+            color: #0066cc;
+            text-decoration: none;
+            font-size: 0.8rem;
+            margin: 0.25rem 0;
+        }
+        .web-sources-list a:hover {
+            text-decoration: underline;
+        }
+
         .chat-input-area {
             padding: 1rem;
             background: var(--card-bg);
@@ -4448,6 +4545,13 @@
                     </div>
                 </div>
             </div>
+            <div class="chat-options">
+                <label class="web-search-toggle">
+                    <input type="checkbox" id="webSearchToggle">
+                    <div class="toggle-switch"></div>
+                    <span>🌐 Поиск в интернете</span>
+                </label>
+            </div>
             <div class="chat-input-area">
                 <input
                     type="text"
@@ -5176,6 +5280,7 @@
         async function sendMessage() {
             const input = document.getElementById('chatInput');
             const sendButton = document.getElementById('sendButton');
+            const webSearchToggle = document.getElementById('webSearchToggle');
             const message = input.value.trim();
 
             if (!message || isLoading) return;
@@ -5198,7 +5303,8 @@
                     body: JSON.stringify({
                         message: message,
                         history: conversationHistory.slice(-10), // Last 10 messages for context
-                        appContext: APP_CONTEXT // App content for AI context
+                        appContext: APP_CONTEXT, // App content for AI context
+                        webSearch: webSearchToggle?.checked || false // Web search toggle
                     }),
                 });
 
@@ -5223,9 +5329,27 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M9 18l6-6-6-6"/>
                                 </svg>
-                                📚 Использованы документы из базы знаний (${data.sources.length})
+                                📚 Документы из базы знаний (${data.sources.length})
                             </button>
                             <ul class="sources-list" id="${sourcesId}">${sourcesList}</ul>
+                        </div>`;
+                }
+
+                // Add web sources if available
+                if (data.webSources && data.webSources.length > 0) {
+                    const webSourcesList = data.webSources.map(s =>
+                        `<a href="${s.url}" target="_blank" rel="noopener">🔗 ${s.title}</a>`
+                    ).join('');
+                    const webSourcesId = 'webSources_' + Date.now();
+                    sourcesHtml += `
+                        <div class="web-sources">
+                            <button class="web-sources-toggle" onclick="toggleSources('${webSourcesId}', this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 18l6-6-6-6"/>
+                                </svg>
+                                🌐 Веб-источники (${data.webSources.length})
+                            </button>
+                            <div class="web-sources-list" id="${webSourcesId}">${webSourcesList}</div>
                         </div>`;
                 }
 
