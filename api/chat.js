@@ -168,7 +168,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message, history = [] } = req.body;
+    const { message, history = [], appContext = '' } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
@@ -176,7 +176,14 @@ export default async function handler(req, res) {
 
     // Search for relevant documents
     const documents = await searchDocuments(message);
-    const contextAddition = formatContext(documents);
+    const knowledgeBaseContext = formatContext(documents);
+
+    // Build full context: app content first, then knowledge base
+    let fullContext = '';
+    if (appContext) {
+      fullContext += `\n\n=== СОДЕРЖАНИЕ ПРИЛОЖЕНИЯ ===\n${appContext}`;
+    }
+    fullContext += knowledgeBaseContext;
 
     // Initialize Gemini model with system instruction
     const model = genAI.getGenerativeModel({
@@ -190,7 +197,7 @@ export default async function handler(req, res) {
     });
 
     // Send message with context
-    const result = await chat.sendMessage(message + contextAddition);
+    const result = await chat.sendMessage(message + fullContext);
     const response = await result.response;
     const assistantMessage = response.text();
 
