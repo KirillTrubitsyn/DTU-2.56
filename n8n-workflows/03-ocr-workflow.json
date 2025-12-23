@@ -1,0 +1,536 @@
+{
+  "name": "DTU OCR Recognition",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recognize",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "id": "ocr-webhook",
+      "name": "OCR Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "dtu-ocr"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "password-check",
+              "leftValue": "={{ $json.body.password }}",
+              "rightValue": "Braesecke1973",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-auth",
+      "name": "Check Auth",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": false, \"error\": \"Unauthorized\" }",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "auth-failed",
+      "name": "Auth Failed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [440, 500]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "outputKey": "image",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.image }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "pdf",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.images }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "array",
+                      "operation": "exists"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "text",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.textContent }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "route-by-type",
+      "name": "Route by File Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Распознай текст на этом изображении. Верни ТОЛЬКО распознанный текст без комментариев.\"\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"{{ $json.body.mediaType }}\",\n            \"data\": \"{{ $json.body.image }}\"\n          }\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": {\n    \"temperature\": 0.1,\n    \"maxOutputTokens\": 8192\n  }\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "ocr-image",
+      "name": "OCR Image (Gemini)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 180],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "google-api-key",
+          "name": "Google API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Обработка PDF - получаем массив изображений страниц\nconst body = $('OCR Webhook').first().json.body;\nconst images = body.images || [];\n\n// Возвращаем каждую страницу как отдельный item\nreturn images.map((img, i) => ({\n  json: {\n    pageNumber: i + 1,\n    totalPages: images.length,\n    imageData: img.data,\n    mediaType: img.mediaType || 'image/png'\n  }\n}));"
+      },
+      "id": "prepare-pdf-pages",
+      "name": "Prepare PDF Pages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "batch-pages",
+      "name": "Process Pages",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Распознай текст на этой странице документа. Верни ТОЛЬКО распознанный текст.\"\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"{{ $json.mediaType }}\",\n            \"data\": \"{{ $json.imageData }}\"\n          }\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": {\n    \"temperature\": 0.1,\n    \"maxOutputTokens\": 8192\n  }\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "ocr-pdf-page",
+      "name": "OCR PDF Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1140, 300],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "google-api-key",
+          "name": "Google API Key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Извлекаем текст из ответа Gemini\nconst response = $input.first().json;\nconst pageInfo = $('Process Pages').first().json;\n\nlet text = '';\ntry {\n  text = response.candidates[0].content.parts[0].text;\n} catch (e) {\n  text = '[Ошибка распознавания страницы]';\n}\n\nreturn {\n  pageNumber: pageInfo.pageNumber,\n  text: text\n};"
+      },
+      "id": "extract-page-text",
+      "name": "Extract Page Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1360, 300]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "aggregate-pages",
+      "name": "Aggregate Pages",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1580, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Объединяем все страницы PDF\nconst pages = $input.first().json.data;\n\n// Сортируем по номеру страницы и объединяем\nconst sortedPages = pages.sort((a, b) => a.pageNumber - b.pageNumber);\nconst fullText = sortedPages.map(p => p.text).join('\\n\\n--- Страница ---\\n\\n');\n\nreturn {\n  content: fullText,\n  pageCount: pages.length\n};"
+      },
+      "id": "combine-pdf-text",
+      "name": "Combine PDF Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Для текстовых файлов - просто передаём контент\nconst body = $('OCR Webhook').first().json.body;\n\nreturn {\n  content: body.textContent,\n  pageCount: 1\n};"
+      },
+      "id": "handle-text",
+      "name": "Handle Text File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 420]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Извлекаем текст из ответа Gemini для одиночного изображения\nconst response = $input.first().json;\n\nlet text = '';\ntry {\n  text = response.candidates[0].content.parts[0].text;\n} catch (e) {\n  text = '[Ошибка распознавания изображения]';\n}\n\nreturn {\n  content: text,\n  pageCount: 1\n};"
+      },
+      "id": "extract-image-text",
+      "name": "Extract Image Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 180]
+    },
+    {
+      "parameters": {},
+      "id": "merge-results",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [2020, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Проанализируй этот юридический документ и извлеки метаданные.\\n\\nДокумент:\\n{{ $json.content.substring(0, 3000) }}\\n\\nВерни JSON в формате:\\n{\\n  \\\"title\\\": \\\"краткое название документа\\\",\\n  \\\"category\\\": \\\"одна из категорий: contract, court_decision, expert_report, monitoring, legislation, correspondence, other\\\"\\n}\\n\\nВерни ТОЛЬКО JSON без markdown разметки.\"\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": {\n    \"temperature\": 0.1,\n    \"maxOutputTokens\": 500\n  }\n}",
+        "options": {}
+      },
+      "id": "extract-metadata",
+      "name": "Extract Metadata (Gemini)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2240, 300],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "google-api-key",
+          "name": "Google API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const content = $('Merge Results').first().json.content;\nconst metadataResponse = $input.first().json;\nconst fileName = $('OCR Webhook').first().json.body.fileName || 'unknown';\n\nlet title = 'Документ';\nlet category = 'other';\n\ntry {\n  let metaText = metadataResponse.candidates[0].content.parts[0].text;\n  // Убираем markdown разметку если есть\n  metaText = metaText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  const metadata = JSON.parse(metaText);\n  title = metadata.title || title;\n  category = metadata.category || category;\n} catch (e) {\n  console.log('Ошибка парсинга метаданных:', e);\n}\n\nreturn {\n  success: true,\n  title: title,\n  category: category,\n  source: fileName,\n  content: content\n};"
+      },
+      "id": "format-response",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2460, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-ocr",
+      "name": "Respond OCR",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2680, 300]
+    }
+  ],
+  "connections": {
+    "OCR Webhook": {
+      "main": [
+        [
+          {
+            "node": "Check Auth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Auth": {
+      "main": [
+        [
+          {
+            "node": "Route by File Type",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Auth Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by File Type": {
+      "main": [
+        [
+          {
+            "node": "OCR Image (Gemini)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare PDF Pages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Text File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OCR Image (Gemini)": {
+      "main": [
+        [
+          {
+            "node": "Extract Image Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Image Text": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare PDF Pages": {
+      "main": [
+        [
+          {
+            "node": "Process Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Pages": {
+      "main": [
+        [
+          {
+            "node": "OCR PDF Page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aggregate Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OCR PDF Page": {
+      "main": [
+        [
+          {
+            "node": "Extract Page Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Page Text": {
+      "main": [
+        [
+          {
+            "node": "Process Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Pages": {
+      "main": [
+        [
+          {
+            "node": "Combine PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Text File": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Results": {
+      "main": [
+        [
+          {
+            "node": "Extract Metadata (Gemini)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Metadata (Gemini)": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Respond OCR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "DTU"
+    }
+  ],
+  "triggerCount": 0,
+  "versionId": "1"
+}

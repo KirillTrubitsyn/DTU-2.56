@@ -1,0 +1,306 @@
+{
+  "name": "DTU Document Upload",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "upload-webhook",
+      "name": "Upload Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "dtu-upload"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "password-check",
+              "leftValue": "={{ $json.body.password }}",
+              "rightValue": "Braesecke1973",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-password",
+      "name": "Check Password",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"error\": \"Неверный пароль\"\n}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "auth-error",
+      "name": "Auth Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [440, 480]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Получаем данные из webhook\nconst body = $('Upload Webhook').first().json.body;\nconst content = body.content || '';\nconst title = body.title || 'Без названия';\nconst source = body.source || '';\nconst category = body.category || 'other';\n\n// Параметры разбиения\nconst CHUNK_SIZE = 1000;\nconst OVERLAP = 200;\n\n// Функция разбиения на чанки\nfunction splitIntoChunks(text, maxLength, overlap) {\n  const chunks = [];\n  let start = 0;\n  \n  while (start < text.length) {\n    let end = start + maxLength;\n    \n    // Ищем точку разрыва (конец предложения)\n    if (end < text.length) {\n      const lastPeriod = text.lastIndexOf('.', end);\n      const lastNewline = text.lastIndexOf('\\n', end);\n      const breakPoint = Math.max(lastPeriod, lastNewline);\n      \n      if (breakPoint > start + maxLength / 2) {\n        end = breakPoint + 1;\n      }\n    }\n    \n    chunks.push({\n      content: text.slice(start, end).trim(),\n      chunkIndex: chunks.length\n    });\n    \n    start = end - overlap;\n    if (start < 0) start = 0;\n    if (end >= text.length) break;\n  }\n  \n  return chunks;\n}\n\nconst chunks = splitIntoChunks(content, CHUNK_SIZE, OVERLAP);\n\n// Возвращаем массив чанков для обработки\nreturn chunks.map((chunk, i) => ({\n  json: {\n    title: chunks.length > 1 ? `${title} (часть ${i + 1}/${chunks.length})` : title,\n    content: chunk.content,\n    source: source,\n    category: category,\n    chunkIndex: i,\n    totalChunks: chunks.length\n  }\n}));"
+      },
+      "id": "split-chunks",
+      "name": "Split into Chunks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "batch-chunks",
+      "name": "Process Chunks",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"models/text-embedding-004\",\n  \"content\": {\n    \"parts\": [\n      {\n        \"text\": {{ JSON.stringify($json.content) }}\n      }\n    ]\n  }\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "get-chunk-embedding",
+      "name": "Get Chunk Embedding",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 300],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "google-api-key",
+          "name": "Google API Key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Получаем данные чанка и embedding\nconst chunk = $('Process Chunks').first().json;\nconst embeddingResponse = $input.first().json;\n\n// Извлекаем вектор\nlet embedding = null;\ntry {\n  embedding = embeddingResponse.embedding.values;\n} catch (e) {\n  console.log('Ошибка получения embedding:', e);\n}\n\nreturn {\n  title: chunk.title,\n  content: chunk.content,\n  source: chunk.source,\n  category: chunk.category,\n  embedding: embedding,\n  hasEmbedding: embedding !== null\n};"
+      },
+      "id": "prepare-insert",
+      "name": "Prepare for Insert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO documents (title, content, source, category, embedding)\nVALUES (\n  {{ $json.title ? \"'\" + $json.title.replace(/'/g, \"''\") + \"'\" : \"NULL\" }},\n  {{ $json.content ? \"'\" + $json.content.replace(/'/g, \"''\") + \"'\" : \"NULL\" }},\n  {{ $json.source ? \"'\" + $json.source.replace(/'/g, \"''\") + \"'\" : \"NULL\" }},\n  {{ $json.category ? \"'\" + $json.category.replace(/'/g, \"''\") + \"'\" : \"NULL\" }},\n  {{ $json.embedding ? \"'[\" + $json.embedding.join(\",\") + \"]'::vector\" : \"NULL\" }}\n)\nRETURNING id, title"
+      },
+      "id": "insert-document",
+      "name": "Insert to Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1320, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-creds",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "aggregate-results",
+      "name": "Aggregate Results",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1540, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.first().json.data;\n\nconst successful = results.filter(r => r.id);\nconst failed = results.filter(r => !r.id);\n\nreturn {\n  success: successful.length > 0,\n  message: `Загружено ${successful.length} документ(ов)`,\n  documents: successful.map(r => ({ id: r.id, title: r.title })),\n  warning: failed.length > 0 ? `${failed.length} документ(ов) не загружено` : null,\n  totalProcessed: results.length\n};"
+      },
+      "id": "format-result",
+      "name": "Format Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-upload",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1980, 300]
+    }
+  ],
+  "connections": {
+    "Upload Webhook": {
+      "main": [
+        [
+          {
+            "node": "Check Password",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Password": {
+      "main": [
+        [
+          {
+            "node": "Split into Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Auth Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split into Chunks": {
+      "main": [
+        [
+          {
+            "node": "Process Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Chunks": {
+      "main": [
+        [
+          {
+            "node": "Get Chunk Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Chunk Embedding": {
+      "main": [
+        [
+          {
+            "node": "Prepare for Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare for Insert": {
+      "main": [
+        [
+          {
+            "node": "Insert to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Process Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Results": {
+      "main": [
+        [
+          {
+            "node": "Format Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Result": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "DTU"
+    }
+  ],
+  "triggerCount": 0,
+  "versionId": "1"
+}

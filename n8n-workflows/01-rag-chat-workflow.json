@@ -1,0 +1,211 @@
+{
+  "name": "DTU RAG Chat",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "Chat Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "dtu-chat"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"models/text-embedding-004\",\n  \"content\": {\n    \"parts\": [\n      {\n        \"text\": \"{{ $json.body.message }}\"\n      }\n    ]\n  }\n}",
+        "options": {}
+      },
+      "id": "get-embedding",
+      "name": "Get Query Embedding",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 300],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "google-api-key",
+          "name": "Google API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT id, title, content, source, category,\n  1 - (embedding <=> '[{{ $json.embedding.values.join(\",\") }}]'::vector) as similarity\nFROM documents\nWHERE 1 - (embedding <=> '[{{ $json.embedding.values.join(\",\") }}]'::vector) > 0.3\nORDER BY similarity DESC\nLIMIT 8"
+      },
+      "id": "vector-search",
+      "name": "Vector Search Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [440, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-creds",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Получаем результаты поиска и оригинальное сообщение\nconst documents = $input.all();\nconst originalMessage = $('Chat Webhook').first().json.body.message;\nconst history = $('Chat Webhook').first().json.body.history || [];\n\n// Форматируем контекст из найденных документов\nlet context = '';\nlet sources = [];\n\nif (documents.length > 0 && documents[0].json.id) {\n  context = '\\n\\n=== НАЙДЕННЫЕ ДОКУМЕНТЫ ИЗ БАЗЫ ЗНАНИЙ ===\\n';\n  \n  documents.forEach((doc, i) => {\n    const d = doc.json;\n    context += `\\n--- Документ ${i + 1}: ${d.title} ---\\n`;\n    context += `Категория: ${d.category || 'не указана'}\\n`;\n    context += `Источник: ${d.source || 'не указан'}\\n`;\n    context += `Релевантность: ${(d.similarity * 100).toFixed(1)}%\\n`;\n    context += `Содержание:\\n${d.content}\\n`;\n    \n    if (d.title && !sources.includes(d.title)) {\n      sources.push(d.title);\n    }\n  });\n} else {\n  context = '\\n\\nВ базе знаний не найдено релевантных документов. Используйте встроенные знания.';\n}\n\n// Встроенные знания о деле ДТУ\nconst builtInKnowledge = `\n=== ВСТРОЕННЫЕ ЗНАНИЯ О ДЕЛЕ ДТУ ===\n\nДело: АО \"Дальтрансуголь\" — иск Росприроднадзора о возмещении экологического вреда (5,16 млрд руб.)\n\nОСНОВНЫЕ ЛИНИИ ЗАЩИТЫ:\n\n1. ПОСТАНОВЛЕНИЕ КС РФ № 56-П (Сила: 9/10)\n   - Суд обязан исследовать ФАКТИЧЕСКИЙ вред, а не только формальные методики\n   - Нельзя взыскивать \"абстрактный\" ущерб без доказательств реального вреда\n\n2. ОТСУТСТВИЕ РЕАЛЬНОГО ВРЕДА (Сила: 8/10)\n   - Мониторинг ДВФУ за 16 лет: экосистема бухты в норме\n   - Биоразнообразие не снизилось, популяции стабильны\n\n3. ЗАЧЁТ ЭКОЛОГИЧЕСКИХ ИНВЕСТИЦИЙ (Сила: 6/10)\n   - ДТУ вложило более 2 млрд руб. в ветрозащиту и пылеподавление\n   - По аналогии с практикой зачёта природоохранных затрат\n\n4. ОСПАРИВАНИЕ МЕТОДИКИ РАСЧЁТА (Сила: 5/10)\n   - Коэффициент Кзагр=6 неправильно применён для диффузного загрязнения\n   - Методика не учитывает специфику угольной пыли\n\n5. СОБЛЮДЕНИЕ НОРМАТИВОВ (Сила: 5/10)\n   - Фактические концентрации: 0,023-0,033 мг/м³ (норма 0,3 мг/м³)\n   - Все ПДК соблюдены\n\n6. КВАЛИФИКАЦИЯ УГОЛЬНОЙ ПЫЛИ (Сила: 4/10)\n   - Угольная пыль не в перечне загрязняющих веществ для водных объектов\n\n7. ПРОЦЕДУРНЫЕ НАРУШЕНИЯ (НЕ РЕКОМЕНДУЕТСЯ - исчерпаны)\n`;\n\n// Формируем историю для Gemini\nconst geminiHistory = history.map(msg => ({\n  role: msg.role === 'assistant' ? 'model' : 'user',\n  parts: [{ text: msg.content }]\n}));\n\n// System prompt\nconst systemPrompt = `Ты — юридический консультант по делу АО \"Дальтрансуголь\". \nТвоя задача — помогать в подготовке правовой позиции защиты.\n\nПРАВИЛА:\n1. Отвечай на русском языке\n2. Используй найденные документы как первоисточник\n3. Если в документах нет ответа — используй встроенные знания\n4. Всегда указывай источники информации\n5. Будь конкретен и практичен\n\n${builtInKnowledge}\n${context}`;\n\nreturn {\n  message: originalMessage,\n  systemPrompt: systemPrompt,\n  history: geminiHistory,\n  sources: sources\n};"
+      },
+      "id": "format-context",
+      "name": "Format Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"system_instruction\": {\n    \"parts\": [\n      {\n        \"text\": {{ JSON.stringify($json.systemPrompt) }}\n      }\n    ]\n  },\n  \"contents\": [\n    {{ $json.history.length > 0 ? $json.history.map(h => JSON.stringify(h)).join(',') + ',' : '' }}\n    {\n      \"role\": \"user\",\n      \"parts\": [\n        {\n          \"text\": {{ JSON.stringify($json.message) }}\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": {\n    \"temperature\": 0.7,\n    \"maxOutputTokens\": 4096\n  }\n}",
+        "options": {}
+      },
+      "id": "gemini-chat",
+      "name": "Gemini Chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 300],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "google-api-key",
+          "name": "Google API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const geminiResponse = $input.first().json;\nconst sources = $('Format Context').first().json.sources;\n\n// Извлекаем текст ответа\nlet responseText = '';\ntry {\n  responseText = geminiResponse.candidates[0].content.parts[0].text;\n} catch (e) {\n  responseText = 'Ошибка при получении ответа от AI. Попробуйте ещё раз.';\n}\n\nreturn {\n  response: responseText,\n  sources: sources\n};"
+      },
+      "id": "parse-response",
+      "name": "Parse Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Chat",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1320, 300]
+    }
+  ],
+  "connections": {
+    "Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Query Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Query Embedding": {
+      "main": [
+        [
+          {
+            "node": "Vector Search Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Search Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Context": {
+      "main": [
+        [
+          {
+            "node": "Gemini Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Chat": {
+      "main": [
+        [
+          {
+            "node": "Parse Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "DTU",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
