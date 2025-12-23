@@ -4378,6 +4378,14 @@
             }
         }
 
+        // Reverse events within each section (newest first)
+        function reverseEventsInSections() {
+            document.querySelectorAll('.timeline-section .timeline').forEach(timeline => {
+                const items = Array.from(timeline.querySelectorAll('.timeline-item'));
+                items.reverse().forEach(item => timeline.appendChild(item));
+            });
+        }
+
         // Reverse calendar years order (newest first)
         function reverseCalendarYears() {
             const container = document.querySelector('.calendar-years');
@@ -4385,12 +4393,19 @@
 
             const years = Array.from(container.querySelectorAll('.calendar-year'));
             years.reverse().forEach(year => container.appendChild(year));
+
+            // Also reverse events within each year
+            container.querySelectorAll('.calendar-year-events').forEach(eventsContainer => {
+                const events = Array.from(eventsContainer.querySelectorAll('.calendar-event'));
+                events.reverse().forEach(event => eventsContainer.appendChild(event));
+            });
         }
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             initTimelineAccordions();
             reverseTimelineSections();
+            reverseEventsInSections();
             reverseCalendarYears();
         });
 
