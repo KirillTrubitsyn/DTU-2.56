@@ -4152,6 +4152,66 @@
             }
         }
 
+        // ========== Auto-convert timeline items to accordions ==========
+        function initTimelineAccordions() {
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                const card = item.querySelector('.timeline-card');
+                if (!card) return;
+
+                // Skip if already has accordion structure
+                if (card.querySelector('.timeline-card-header')) return;
+
+                const dateEl = card.querySelector('.timeline-date');
+                const titleEl = card.querySelector('.timeline-title');
+                const descEl = card.querySelector('.timeline-description');
+                const sigEl = card.querySelector('.timeline-significance');
+                const docsEl = card.querySelector('.timeline-docs');
+
+                // Only convert if has substantial content (description or docs)
+                if (!descEl && !docsEl) return;
+
+                // Create header
+                const header = document.createElement('div');
+                header.className = 'timeline-card-header';
+                header.onclick = function() { toggleTimelineItem(this); };
+
+                // Move date and title to header
+                if (dateEl) header.appendChild(dateEl);
+                if (titleEl) header.appendChild(titleEl);
+
+                // Add toggle button
+                const toggle = document.createElement('div');
+                toggle.className = 'timeline-card-toggle';
+                toggle.innerHTML = `
+                    <span>Подробнее</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                `;
+                header.appendChild(toggle);
+
+                // Create body
+                const body = document.createElement('div');
+                body.className = 'timeline-card-body';
+
+                // Move content to body
+                if (descEl) body.appendChild(descEl);
+                if (sigEl) body.appendChild(sigEl);
+                if (docsEl) body.appendChild(docsEl);
+
+                // Rebuild card
+                card.innerHTML = '';
+                card.appendChild(header);
+                card.appendChild(body);
+
+                // Start collapsed
+                item.classList.add('collapsed');
+            });
+        }
+
+        // Initialize accordions on page load
+        document.addEventListener('DOMContentLoaded', initTimelineAccordions);
+
         // ========== Calendar Navigation Functions ==========
         function toggleCalendarYear(header) {
             const year = header.closest('.calendar-year');
