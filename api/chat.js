@@ -58,7 +58,7 @@ async function getEmbedding(text) {
 }
 
 // Hybrid search: combines vector similarity + keyword search + fallback
-async function searchDocuments(query, limit = 8) {
+async function searchDocuments(query, limit = 12) {
   try {
     const embedding = await getEmbedding(query);
     let vectorResults = [];
@@ -168,7 +168,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message, history = [], appContext = '' } = req.body;
+    const { message, history = [], appContext = '', webSearch = false } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
@@ -185,11 +185,21 @@ export default async function handler(req, res) {
     }
     fullContext += knowledgeBaseContext;
 
-    // Initialize Gemini model with system instruction
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-3-pro-preview',
+    // Model configuration
+    const modelConfig = {
+      model: 'gemini-2.5-flash',
       systemInstruction: SYSTEM_PROMPT,
-    });
+    };
+
+    // Add Google Search grounding if web search is enabled
+    if (webSearch) {
+      modelConfig.tools = [{
+        googleSearch: {}
+      }];
+    }
+
+    // Initialize Gemini model
+    const model = genAI.getGenerativeModel(modelConfig);
 
     // Start chat with history
     const chat = model.startChat({
@@ -201,10 +211,22 @@ export default async function handler(req, res) {
     const response = await result.response;
     const assistantMessage = response.text();
 
+    // Extract web search sources if available
+    let webSources = [];
+    if (webSearch && response.candidates?.[0]?.groundingMetadata?.groundingChunks) {
+      webSources = response.candidates[0].groundingMetadata.groundingChunks
+        .filter(chunk => chunk.web)
+        .map(chunk => ({
+          title: chunk.web.title || 'Веб-источник',
+          url: chunk.web.uri
+        }));
+    }
+
     // Return response with sources
     return res.status(200).json({
       response: assistantMessage,
-      sources: documents.map(d => d.title || d.source).filter(Boolean)
+      sources: documents.map(d => d.title || d.source).filter(Boolean),
+      webSources: webSources
     });
 
   } catch (error) {
