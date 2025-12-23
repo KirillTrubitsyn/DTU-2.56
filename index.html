@@ -2166,6 +2166,72 @@
         .calendar-legend-dot.key { background: var(--accent-gold); }
         .calendar-legend-dot.upcoming { background: #6366f1; }
 
+        /* Timeline Filters */
+        .timeline-filters {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .timeline-filters-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-light);
+            margin-bottom: 0.75rem;
+        }
+
+        .timeline-filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .timeline-filter-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            background: var(--card-bg);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .timeline-filter-btn:hover {
+            border-color: var(--primary);
+            background: rgba(26, 54, 93, 0.05);
+        }
+
+        .timeline-filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .filter-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .filter-dot.key { background: var(--accent-gold); }
+        .filter-dot.positive { background: var(--strong); }
+        .filter-dot.negative { background: var(--weak); }
+
+        .timeline-filter-btn.active .filter-dot {
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.5);
+        }
+
+        /* Hidden state for filtered items */
+        .timeline-item.filtered-out {
+            display: none !important;
+        }
+
         .calendar-years {
             padding: 0.5rem;
         }
@@ -2348,14 +2414,14 @@
 
     <!-- Main Page Navigation Tabs -->
     <div class="main-tabs">
-        <button class="main-tab active" onclick="switchMainTab('analysis')" id="mainTabAnalysis">
+        <button class="main-tab" onclick="switchMainTab('analysis')" id="mainTabAnalysis">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M9 12l2 2 4-4"/>
                 <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             Анализ защиты
         </button>
-        <button class="main-tab" onclick="switchMainTab('timeline')" id="mainTabTimeline">
+        <button class="main-tab active" onclick="switchMainTab('timeline')" id="mainTabTimeline">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M12 6v6l4 2"/>
@@ -2365,7 +2431,7 @@
     </div>
 
     <!-- Analysis Tab Content -->
-    <div class="main-tab-content active" id="analysisContent">
+    <div class="main-tab-content" id="analysisContent">
         <div class="container">
             <div class="legend">
             <div class="legend-item strong">
@@ -3011,7 +3077,7 @@
     </div>
 
     <!-- Timeline Tab Content -->
-    <div class="main-tab-content" id="timelineContent">
+    <div class="main-tab-content active" id="timelineContent">
         <div class="timeline-layout">
 
             <!-- Calendar Sidebar -->
@@ -3041,6 +3107,28 @@
                         <div class="calendar-legend-item">
                             <span class="calendar-legend-dot upcoming"></span>
                             <span>Предстоящее событие</span>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="timeline-filters">
+                        <div class="timeline-filters-title">Фильтры</div>
+                        <div class="timeline-filter-buttons">
+                            <button class="timeline-filter-btn active" data-filter="all" onclick="filterTimeline('all')">
+                                Все
+                            </button>
+                            <button class="timeline-filter-btn" data-filter="key" onclick="filterTimeline('key')">
+                                <span class="filter-dot key"></span>
+                                Ключевые
+                            </button>
+                            <button class="timeline-filter-btn" data-filter="positive" onclick="filterTimeline('positive')">
+                                <span class="filter-dot positive"></span>
+                                Успехи
+                            </button>
+                            <button class="timeline-filter-btn" data-filter="negative" onclick="filterTimeline('negative')">
+                                <span class="filter-dot negative"></span>
+                                Неудачи
+                            </button>
                         </div>
                     </div>
 
@@ -4139,6 +4227,58 @@
         function toggleTimelineSection(header) {
             const section = header.closest('.timeline-section');
             section.classList.toggle('collapsed');
+        }
+
+        // ========== Timeline Filter Function ==========
+        function filterTimeline(filterType) {
+            // Update active button
+            document.querySelectorAll('.timeline-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.timeline-filter-btn[data-filter="${filterType}"]`).classList.add('active');
+
+            // Get all timeline items
+            const items = document.querySelectorAll('.timeline-item');
+
+            items.forEach(item => {
+                if (filterType === 'all') {
+                    item.classList.remove('filtered-out');
+                } else {
+                    // Check if item has the filter class
+                    if (item.classList.contains(filterType)) {
+                        item.classList.remove('filtered-out');
+                    } else {
+                        item.classList.add('filtered-out');
+                    }
+                }
+            });
+
+            // Expand all sections when filtering to show results
+            if (filterType !== 'all') {
+                document.querySelectorAll('.timeline-section').forEach(section => {
+                    section.classList.remove('collapsed');
+                });
+            }
+
+            // Update section event counts
+            updateSectionCounts();
+        }
+
+        function updateSectionCounts() {
+            document.querySelectorAll('.timeline-section').forEach(section => {
+                const visibleItems = section.querySelectorAll('.timeline-item:not(.filtered-out)').length;
+                const countEl = section.querySelector('.event-count');
+                if (countEl) {
+                    const word = getEventWord(visibleItems);
+                    countEl.textContent = `${visibleItems} ${word}`;
+                }
+            });
+        }
+
+        function getEventWord(n) {
+            if (n % 10 === 1 && n % 100 !== 11) return 'событие';
+            if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return 'события';
+            return 'событий';
         }
 
         function toggleTimelineItem(header) {
