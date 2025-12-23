@@ -4749,7 +4749,10 @@
             const modal = document.getElementById('chatModal');
             modal.classList.toggle('open');
             if (modal.classList.contains('open')) {
-                document.getElementById('chatInput').focus();
+                // Не фокусироваться на мобильных устройствах, чтобы не открывать клавиатуру
+                if (window.innerWidth > 768) {
+                    document.getElementById('chatInput').focus();
+                }
                 updateSavedBadge();
             }
         }
@@ -4765,7 +4768,10 @@
                 savedTab.classList.remove('active');
                 chatContent.classList.add('active');
                 savedContent.classList.remove('active');
-                document.getElementById('chatInput').focus();
+                // Не фокусироваться на мобильных устройствах
+                if (window.innerWidth > 768) {
+                    document.getElementById('chatInput').focus();
+                }
             } else {
                 chatTab.classList.remove('active');
                 savedTab.classList.add('active');
