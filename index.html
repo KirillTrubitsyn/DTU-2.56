@@ -4742,12 +4742,13 @@
                 const day = match[3];
 
                 // Get event class (positive, negative, neutral, key, vtu, upcoming)
+                // VTU check must come first as VTU events may have additional classes
                 let eventClass = 'neutral';
-                if (item.classList.contains('positive')) eventClass = 'positive';
+                if (item.classList.contains('vtu')) eventClass = 'vtu';
+                else if (item.classList.contains('upcoming')) eventClass = 'upcoming';
+                else if (item.classList.contains('positive')) eventClass = 'positive';
                 else if (item.classList.contains('negative')) eventClass = 'negative';
                 else if (item.classList.contains('key')) eventClass = 'key';
-                else if (item.classList.contains('vtu')) eventClass = 'vtu';
-                else if (item.classList.contains('upcoming')) eventClass = 'upcoming';
 
                 // Get title
                 const titleEl = item.querySelector('.timeline-title');
