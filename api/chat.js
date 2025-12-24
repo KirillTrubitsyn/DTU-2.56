@@ -168,7 +168,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message, history = [], appContext = '', webSearch = false, thinkLonger = false } = req.body;
+    const { message, history = [], appContext = '', webSearch = false } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
@@ -185,20 +185,11 @@ export default async function handler(req, res) {
     }
     fullContext += knowledgeBaseContext;
 
-    // Model configuration
+    // Model configuration (Gemini 3 Pro has thinking enabled by default at HIGH level)
     const modelConfig = {
       model: 'gemini-3-pro-preview',
       systemInstruction: SYSTEM_PROMPT,
     };
-
-    // Enable extended thinking mode for more detailed analysis
-    if (thinkLonger) {
-      modelConfig.generationConfig = {
-        thinkingConfig: {
-          thinkingBudget: 8192 // Extended thinking budget for deeper analysis
-        }
-      };
-    }
 
     // Add Google Search grounding if web search is enabled
     if (webSearch) {
