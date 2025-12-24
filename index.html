@@ -4589,17 +4589,6 @@
                         onkeypress="handleKeyPress(event)"
                     >
                     <div class="chat-options">
-                        <label class="think-longer-toggle" title="Включите для более детального и глубокого анализа">
-                            <input type="checkbox" id="thinkLongerToggle">
-                            <span class="toggle-switch"></span>
-                            <span class="toggle-label">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <path d="M12 6v6l4 2"/>
-                                </svg>
-                                Думать дольше
-                            </span>
-                        </label>
                         <label class="think-longer-toggle" title="Поиск актуальной информации в интернете">
                             <input type="checkbox" id="webSearchToggle">
                             <span class="toggle-switch"></span>
@@ -5334,7 +5323,6 @@
         async function sendMessage() {
             const input = document.getElementById('chatInput');
             const sendButton = document.getElementById('sendButton');
-            const thinkLonger = document.getElementById('thinkLongerToggle').checked;
             const webSearchToggle = document.getElementById('webSearchToggle');
             const message = input.value.trim();
 
@@ -5359,7 +5347,6 @@
                         message: message,
                         history: conversationHistory.slice(-10), // Last 10 messages for context
                         appContext: APP_CONTEXT, // App content for AI context
-                        thinkLonger: thinkLonger, // Extended thinking mode
                         webSearch: webSearchToggle?.checked || false // Web search toggle
                     }),
                 });
