@@ -2027,6 +2027,38 @@
             color: var(--primary);
         }
 
+        /* Стили для событий ВаниноТрансУголь */
+        .timeline-item.vtu::before {
+            background: #8B5CF6;
+        }
+
+        .timeline-item.vtu .timeline-card {
+            border-left-color: #8B5CF6;
+            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+        }
+
+        .timeline-item.vtu .timeline-date {
+            background: #8B5CF6;
+        }
+
+        /* Стили для критически негативных событий */
+        .timeline-item.critical::before {
+            background: #DC2626;
+            width: 18px;
+            height: 18px;
+            left: -1.85rem;
+            box-shadow: 0 0 12px rgba(220, 38, 38, 0.6);
+        }
+
+        .timeline-item.critical .timeline-card {
+            border-left-color: #DC2626;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        }
+
+        .timeline-item.critical .timeline-date {
+            background: #DC2626;
+        }
+
         .timeline-title {
             font-size: 1.1rem;
             font-weight: 700;
@@ -3743,7 +3775,7 @@
                             <span class="timeline-date">1 июня 2023 г.</span>
                             <div class="timeline-title">Постановление о наложении штрафа на АО «НТК» (управляющая организация)</div>
                             <div class="timeline-description">
-                                Росприроднадзор вынес постановление о привлечении АО «Находкинская транспортная компания» (управляющая организация АО «Дальтрансуголь») к административной ответственности с назначением штрафа в размере 1 000 000 рублей.
+                                Росприроднадзор вынес постановление о привлечении АО «Национальная транспортная компания» (управляющая организация АО «Дальтрансуголь») к административной ответственности с назначением штрафа в размере 1 000 000 рублей.
                             </div>
                             <div class="timeline-significance">
                                 <div class="timeline-significance-label">Значение</div>
@@ -3812,9 +3844,9 @@
                         </div>
                     </div>
 
-                    <div class="timeline-item negative" id="event-2023-07-27">
+                    <div class="timeline-item negative" id="event-2023-07-26">
                         <div class="timeline-card">
-                            <span class="timeline-date">27 июля 2023 г.</span>
+                            <span class="timeline-date">26 июля 2023 г.</span>
                             <div class="timeline-title">Повторное постановление Росприроднадзора в отношении АО «Дальтрансуголь»</div>
                             <div class="timeline-description">
                                 После возврата дела Росприроднадзор вынес новое постановление о привлечении АО «Дальтрансуголь» к административной ответственности с назначением штрафа в размере 1 000 000 рублей. В постановлении объединены составы правонарушений по нескольким статьям КоАП РФ.
@@ -3826,7 +3858,7 @@
                             <div class="timeline-docs">
                                 <div class="timeline-docs-label">Документы:</div>
                                 <ul class="timeline-docs-list">
-                                    <li>Постановление о назначении адм. наказания от 27.07.2023 (АО «Дальтрансуголь»)</li>
+                                    <li>Постановление о назначении адм. наказания от 26.07.2023 (АО «Дальтрансуголь»)</li>
                                 </ul>
                             </div>
                         </div>
@@ -3875,7 +3907,7 @@
                             </div>
                             <div class="timeline-significance">
                                 <div class="timeline-significance-label">Значение</div>
-                                <div class="timeline-significance-text">Третья попытка привлечения НТК к административной ответственности.</div>
+                                <div class="timeline-significance-text">Вторая попытка привлечения НТК к административной ответственности.</div>
                             </div>
                             <div class="timeline-docs">
                                 <div class="timeline-docs-label">Документы:</div>
@@ -3909,9 +3941,9 @@
                     <div class="timeline-item positive" id="event-2023-11-09">
                         <div class="timeline-card">
                             <span class="timeline-date">9 ноября 2023 г.</span>
-                            <div class="timeline-title">Советско-Гаванский городской суд отменяет постановление от 27.07.2023 в отношении ДТУ</div>
+                            <div class="timeline-title">Советско-Гаванский городской суд отменяет постановление от 26.07.2023 в отношении ДТУ</div>
                             <div class="timeline-description">
-                                Советско-Гаванский городской суд Хабаровского края вновь отменил постановление Росприроднадзора от 27.07.2023 в отношении АО «Дальтрансуголь» и направил дело на новое рассмотрение (дело № 12-188/2023).
+                                Советско-Гаванский городской суд Хабаровского края вновь отменил постановление Росприроднадзора от 26.07.2023 в отношении АО «Дальтрансуголь» и направил дело на новое рассмотрение (дело № 12-188/2023).
                             </div>
                             <div class="timeline-significance">
                                 <div class="timeline-significance-label">Значение</div>
@@ -4063,7 +4095,7 @@
                         </div>
                     </div>
 
-                    <div class="timeline-item negative" id="event-2024-06-21">
+                    <div class="timeline-item vtu" id="event-2024-06-21">
                         <div class="timeline-card">
                             <span class="timeline-date">21 июня 2024 г.</span>
                             <div class="timeline-title">Арбитражный суд Хабаровского края подтверждает законность предписания в отношении АО «ВаниноТрансУголь»</div>
@@ -4083,7 +4115,7 @@
                         </div>
                     </div>
 
-                    <div class="timeline-item negative" id="event-2024-09-25">
+                    <div class="timeline-item vtu" id="event-2024-09-25">
                         <div class="timeline-card">
                             <span class="timeline-date">25 сентября 2024 г.</span>
                             <div class="timeline-title">Шестой арбитражный апелляционный суд подтверждает законность предписания ВТУ</div>
@@ -4123,7 +4155,7 @@
                         </div>
                     </div>
 
-                    <div class="timeline-item negative" id="event-2024-12-05">
+                    <div class="timeline-item vtu" id="event-2024-12-05">
                         <div class="timeline-card">
                             <span class="timeline-date">5 декабря 2024 г.</span>
                             <div class="timeline-title">Арбитражный суд Дальневосточного округа подтверждает законность предписания ВТУ</div>
@@ -4199,7 +4231,7 @@
                 <div class="timeline-section-body">
                     <div class="timeline">
 
-                    <div class="timeline-item key" id="event-2025-01-15">
+                    <div class="timeline-item vtu" id="event-2025-01-15">
                         <div class="timeline-card">
                             <span class="timeline-date">15 января 2025 г.</span>
                             <div class="timeline-title">Арбитражный суд Хабаровского края взыскивает 309 млн руб. с АО «ВаниноТрансУголь»</div>
@@ -4253,7 +4285,7 @@
                         </div>
                     </div>
 
-                    <div class="timeline-item negative" id="event-2025-04-08">
+                    <div class="timeline-item vtu" id="event-2025-04-08">
                         <div class="timeline-card">
                             <span class="timeline-date">8 апреля 2025 г.</span>
                             <div class="timeline-title">Шестой арбитражный апелляционный суд подтверждает взыскание 309 млн руб. с ВТУ</div>
@@ -4293,7 +4325,7 @@
                         </div>
                     </div>
 
-                    <div class="timeline-item key" id="event-2025-07-09">
+                    <div class="timeline-item vtu critical" id="event-2025-07-09">
                         <div class="timeline-card">
                             <span class="timeline-date">9 июля 2025 г.</span>
                             <div class="timeline-title">Арбитражный суд Дальневосточного округа подтверждает взыскание 309 млн руб. с ВТУ</div>
@@ -4336,9 +4368,9 @@
                     <div class="timeline-item positive" id="event-2025-10-16">
                         <div class="timeline-card">
                             <span class="timeline-date">16 октября 2025 г.</span>
-                            <div class="timeline-title">Кировский районный суд повторно снижает штраф для АО «Дальтрансуголь» до 700 000 рублей и убирает указание на отягчающие обстоятельства</div>
+                            <div class="timeline-title">Кировский районный суд повторно снижает штраф для АО «Дальтрансуголь» до 700 000 рублей и исключает указание на отягчающие обстоятельства</div>
                             <div class="timeline-description">
-                                При новом рассмотрении (в ином составе суда) Кировский районный суд г. Хабаровска вновь снизил размер административного штрафа для АО «Дальтрансуголь» до 700 000 рублей и убрал указание на отягчающие обстоятельства.
+                                При новом рассмотрении (в ином составе суда) Кировский районный суд г. Хабаровска вновь снизил размер административного штрафа для АО «Дальтрансуголь» до 700 000 рублей и исключил указание на отягчающие обстоятельства.
                             </div>
                             <div class="timeline-significance">
                                 <div class="timeline-significance-label">Значение</div>
@@ -4823,7 +4855,7 @@
 
 16 октября 2025 — Кировский районный суд повторно снижает штраф ДТУ до 700 000 рублей.
 
-17 октября 2025 — Росприроднадзор направляет претензию № 18-10/17190 о добровольном возмещении вреда в размере 2 562 113 054,91 руб.
+17 октября 2025 — Росприроднадзор направляет письмо № 18-10/17190 о добровольном возмещении вреда в размере 2 562 113 054,91 руб.
 
 19 ноября 2025 — Росприроднадзор подаёт иск в Арбитражный суд Хабаровского края (дело № А73-19604/2025) о взыскании 2 562 113 054,91 руб. (2,5 млрд руб.) за вред водному объекту.
 
