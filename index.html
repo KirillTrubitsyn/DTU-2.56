@@ -2029,20 +2029,20 @@
 
         /* Стили для событий ВаниноТрансУголь */
         .timeline-item.vtu::before {
-            background: #8B5CF6;
+            background: #EA580C;
         }
 
         .timeline-item.vtu .timeline-card {
-            border-left-color: #8B5CF6;
-            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+            border-left-color: #EA580C;
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
         }
 
         .timeline-item.vtu .timeline-date {
-            background: #8B5CF6;
+            background: #EA580C;
         }
 
-        /* Стили для критически негативных событий */
-        .timeline-item.critical::before {
+        /* Стили для критически негативных событий ВТУ (с красным маркером) */
+        .timeline-item.vtu.critical::before {
             background: #DC2626;
             width: 18px;
             height: 18px;
@@ -2050,14 +2050,23 @@
             box-shadow: 0 0 12px rgba(220, 38, 38, 0.6);
         }
 
-        .timeline-item.critical .timeline-card {
-            border-left-color: #DC2626;
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        .timeline-item.vtu.critical .timeline-card {
+            border-left-color: #EA580C;
+            border-left-width: 5px;
+            background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+            box-shadow: 0 0 0 2px #DC2626, 0 2px 8px rgba(220, 38, 38, 0.3);
         }
 
-        .timeline-item.critical .timeline-date {
-            background: #DC2626;
+        .timeline-item.vtu.critical .timeline-date {
+            background: #EA580C;
         }
+
+        .timeline-item.vtu.critical .timeline-title::before {
+            content: "⚠️ ";
+        }
+
+        .filter-dot.vtu { background: #EA580C; }
+        .calendar-legend-dot.vtu { background: #EA580C; }
 
         .timeline-title {
             font-size: 1.1rem;
@@ -3296,6 +3305,10 @@
                             <span class="calendar-legend-dot upcoming"></span>
                             <span>Предстоящее событие</span>
                         </div>
+                        <div class="calendar-legend-item">
+                            <span class="calendar-legend-dot vtu"></span>
+                            <span>Дело ВТУ (прецедент)</span>
+                        </div>
                     </div>
 
                     <!-- Filters -->
@@ -3316,6 +3329,10 @@
                             <button class="timeline-filter-btn" data-filter="negative" onclick="filterTimeline('negative')">
                                 <span class="filter-dot negative"></span>
                                 Неудачи
+                            </button>
+                            <button class="timeline-filter-btn" data-filter="vtu" onclick="filterTimeline('vtu')">
+                                <span class="filter-dot vtu"></span>
+                                Дело ВТУ
                             </button>
                         </div>
                     </div>
