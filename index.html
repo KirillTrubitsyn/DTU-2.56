@@ -2029,20 +2029,20 @@
 
         /* Стили для событий ВаниноТрансУголь */
         .timeline-item.vtu::before {
-            background: #8B5CF6;
+            background: #EA580C;
         }
 
         .timeline-item.vtu .timeline-card {
-            border-left-color: #8B5CF6;
-            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+            border-left-color: #EA580C;
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
         }
 
         .timeline-item.vtu .timeline-date {
-            background: #8B5CF6;
+            background: #EA580C;
         }
 
-        /* Стили для критически негативных событий */
-        .timeline-item.critical::before {
+        /* Стили для критически негативных событий ВТУ (с красным маркером) */
+        .timeline-item.vtu.critical::before {
             background: #DC2626;
             width: 18px;
             height: 18px;
@@ -2050,14 +2050,23 @@
             box-shadow: 0 0 12px rgba(220, 38, 38, 0.6);
         }
 
-        .timeline-item.critical .timeline-card {
-            border-left-color: #DC2626;
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        .timeline-item.vtu.critical .timeline-card {
+            border-left-color: #EA580C;
+            border-left-width: 5px;
+            background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+            box-shadow: 0 0 0 2px #DC2626, 0 2px 8px rgba(220, 38, 38, 0.3);
         }
 
-        .timeline-item.critical .timeline-date {
-            background: #DC2626;
+        .timeline-item.vtu.critical .timeline-date {
+            background: #EA580C;
         }
+
+        .timeline-item.vtu.critical .timeline-title::before {
+            content: "⚠️ ";
+        }
+
+        .filter-dot.vtu { background: #EA580C; }
+        .calendar-legend-dot.vtu { background: #EA580C; }
 
         .timeline-title {
             font-size: 1.1rem;
@@ -2681,8 +2690,8 @@
                             <h4>Дополнительно к отзыву</h4>
                             <ul>
                                 <li>Представить практику применения КС 56-П:</li>
-                                <li><strong>АС ЗСО от 25.12.2024</strong></li>
-                                <li><strong>АС ПО от 28.02.2025</strong></li>
+                                <li><strong>АС ЗСО от 12.12.2024 № А81-471/2024</strong> — <a href="https://kad.arbitr.ru/Card/795b3736-32c0-42f9-83e7-b9932ba6a6fe" target="_blank">КАД Арбитр</a></li>
+                                <li><strong>АС ПО от 28.02.2025 № А55-22412/2023</strong> — <a href="https://kad.arbitr.ru/Card/7089cecd-ae65-42ee-8d1d-6e83e3930322" target="_blank">КАД Арбитр</a>. Суд снизил размер вреда с учётом фактических обстоятельств и позиции КС РФ.</li>
                             </ul>
                         </div>
                     </div>
@@ -3296,6 +3305,10 @@
                             <span class="calendar-legend-dot upcoming"></span>
                             <span>Предстоящее событие</span>
                         </div>
+                        <div class="calendar-legend-item">
+                            <span class="calendar-legend-dot vtu"></span>
+                            <span>Дело ВТУ (прецедент)</span>
+                        </div>
                     </div>
 
                     <!-- Filters -->
@@ -3316,6 +3329,10 @@
                             <button class="timeline-filter-btn" data-filter="negative" onclick="filterTimeline('negative')">
                                 <span class="filter-dot negative"></span>
                                 Неудачи
+                            </button>
+                            <button class="timeline-filter-btn" data-filter="vtu" onclick="filterTimeline('vtu')">
+                                <span class="filter-dot vtu"></span>
+                                Дело ВТУ
                             </button>
                         </div>
                     </div>
@@ -4245,7 +4262,7 @@
                             <div class="timeline-docs">
                                 <div class="timeline-docs-label">Документы:</div>
                                 <ul class="timeline-docs-list">
-                                    <li>Решение АС Хабаровского края от 15.01.2025 по делу № А73-8310/2024 (ВТУ)</li>
+                                    <li>Решение АС Хабаровского края от 15.01.2025 по делу № А73-8310/2024 (ВТУ) — <a href="https://kad.arbitr.ru/Card/8fbf1e5a-ed97-4dd1-bb16-f7f4aace4111" target="_blank">КАД Арбитр</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -4299,7 +4316,7 @@
                             <div class="timeline-docs">
                                 <div class="timeline-docs-label">Документы:</div>
                                 <ul class="timeline-docs-list">
-                                    <li>Постановление 6 ААС от 08.04.2025 по делу № А73-8310/2024 (ВТУ)</li>
+                                    <li>Постановление 6 ААС от 08.04.2025 по делу № А73-8310/2024 (ВТУ) — <a href="https://kad.arbitr.ru/Card/8fbf1e5a-ed97-4dd1-bb16-f7f4aace4111" target="_blank">КАД Арбитр</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -4339,7 +4356,7 @@
                             <div class="timeline-docs">
                                 <div class="timeline-docs-label">Документы:</div>
                                 <ul class="timeline-docs-list">
-                                    <li>Постановление АС Дальневосточного округа от 09.07.2025 по делу № А73-8310/2024 (ВТУ)</li>
+                                    <li>Постановление АС Дальневосточного округа от 09.07.2025 по делу № А73-8310/2024 (ВТУ) — <a href="https://kad.arbitr.ru/Card/8fbf1e5a-ed97-4dd1-bb16-f7f4aace4111" target="_blank">КАД Арбитр</a></li>
                                 </ul>
                             </div>
                         </div>
