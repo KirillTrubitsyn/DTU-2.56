@@ -3786,7 +3786,7 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 4v16m8-8H4"/>
                     </svg>
-                    <span id="docsToggleText">Добавить документ (для администратора)</span>
+                    <span id="docsToggleText">Добавить/Удалить файлы (для администратора)</span>
                 </div>
 
                 <!-- Login Form -->
@@ -5119,18 +5119,18 @@
 
         // ========== Documents Functions ==========
         let docsAdminLoggedIn = false;
+        let docsAdminPassword = null; // Password for documents admin
 
         function toggleDocsPanel() {
             const loginForm = document.getElementById('docsLoginForm');
             const adminForm = document.getElementById('docsAdminForm');
 
-            // If already logged in (either via docs panel or main admin panel)
-            if (docsAdminLoggedIn || adminPassword) {
-                docsAdminLoggedIn = true;
+            // If already logged in
+            if (docsAdminLoggedIn && docsAdminPassword) {
                 if (adminForm.style.display === 'none') {
                     loginForm.style.display = 'none';
                     adminForm.style.display = 'block';
-                    document.getElementById('docsToggleText').textContent = 'Добавить документ';
+                    document.getElementById('docsToggleText').textContent = 'Добавить/Удалить файлы';
                 } else {
                     adminForm.style.display = 'none';
                 }
@@ -5171,13 +5171,13 @@
                 }
 
                 // Success - store password and show form
-                adminPassword = password;
+                docsAdminPassword = password;
                 docsAdminLoggedIn = true;
                 errorEl.style.display = 'none';
                 document.getElementById('docsAdminPassword').value = '';
                 document.getElementById('docsLoginForm').style.display = 'none';
                 document.getElementById('docsAdminForm').style.display = 'block';
-                document.getElementById('docsToggleText').textContent = 'Добавить документ';
+                document.getElementById('docsToggleText').textContent = 'Добавить/Удалить файлы';
 
                 // Reset to add mode and update delete list
                 switchDocsAdminMode('add');
@@ -5191,9 +5191,10 @@
 
         function docsAdminLogout() {
             docsAdminLoggedIn = false;
+            docsAdminPassword = null;
             document.getElementById('docsAdminForm').style.display = 'none';
             document.getElementById('docsLoginForm').style.display = 'none';
-            document.getElementById('docsToggleText').textContent = 'Добавить документ (для администратора)';
+            document.getElementById('docsToggleText').textContent = 'Добавить/Удалить файлы (для администратора)';
             resetDocsForm();
         }
 
@@ -5389,7 +5390,7 @@
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                password: adminPassword,
+                                password: docsAdminPassword,
                                 fileName: file.name,
                                 fileData: e.target.result,
                                 contentType: file.type,
@@ -5458,7 +5459,7 @@
         }
 
         async function deleteListDocument(index) {
-            if (!adminPassword) {
+            if (!docsAdminPassword) {
                 alert('Удаление документов доступно только администратору');
                 return;
             }
@@ -5473,7 +5474,7 @@
                             method: 'DELETE',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                password: adminPassword,
+                                password: docsAdminPassword,
                                 fileName: doc.fileName
                             })
                         });
@@ -5485,6 +5486,7 @@
                 savedDocuments.splice(index, 1);
                 localStorage.setItem('dtuDocuments', JSON.stringify(savedDocuments));
                 renderSavedDocuments();
+                renderDeleteList(); // Update delete list
             }
         }
 
