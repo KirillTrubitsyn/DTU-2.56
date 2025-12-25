@@ -4962,15 +4962,18 @@
         }
 
         function switchDocFormTab(tabName) {
-            document.querySelectorAll('.admin-form .form-tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.admin-form .form-tab-content').forEach(content => content.classList.remove('active'));
+            const formTabs = document.querySelectorAll('.form-tabs .form-tab');
+            const formContents = document.querySelectorAll('.admin-form .form-tab-content');
+
+            formTabs.forEach(tab => tab.classList.remove('active'));
+            formContents.forEach(content => content.classList.remove('active'));
 
             if (tabName === 'link') {
-                document.querySelector('.form-tab:first-child').classList.add('active');
-                document.getElementById('linkFormContent').classList.add('active');
+                formTabs[0]?.classList.add('active');
+                document.getElementById('linkFormContent')?.classList.add('active');
             } else {
-                document.querySelector('.form-tab:last-child').classList.add('active');
-                document.getElementById('uploadFormContent').classList.add('active');
+                formTabs[1]?.classList.add('active');
+                document.getElementById('uploadFormContent')?.classList.add('active');
             }
         }
 
@@ -4979,6 +4982,8 @@
 
         function renderSavedDocuments() {
             const list = document.getElementById('documentsList');
+            if (!list) return;
+
             // Find marker for dynamic documents
             const existingDynamic = list.querySelectorAll('.document-card.dynamic');
             existingDynamic.forEach(el => el.remove());
@@ -4997,10 +5002,10 @@
                         </svg>
                     </div>
                     <div class="document-info">
-                        <h3>${doc.title}</h3>
-                        <p class="document-meta">${doc.description || (doc.type === 'link' ? 'Google Документ' : 'Загруженный файл')}</p>
+                        <h3>${escapeHtml(doc.title)}</h3>
+                        <p class="document-meta">${escapeHtml(doc.description) || (doc.type === 'link' ? 'Google Документ' : 'Загруженный файл')}</p>
                     </div>
-                    <a href="${doc.url}" target="_blank" class="document-link">
+                    <a href="${escapeHtml(doc.url)}" target="_blank" class="document-link">
                         <span>Открыть</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
@@ -5020,10 +5025,18 @@
             });
         }
 
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         function addDocument() {
-            const title = document.getElementById('docTitle').value.trim();
-            const description = document.getElementById('docDescription').value.trim();
-            const linkTab = document.getElementById('linkFormContent').classList.contains('active');
+            const title = document.getElementById('docTitle')?.value.trim();
+            const description = document.getElementById('docDescription')?.value.trim();
+            const linkContent = document.getElementById('linkFormContent');
+            const linkTab = linkContent?.classList.contains('active');
 
             if (!title) {
                 alert('Введите название документа');
@@ -5031,15 +5044,16 @@
             }
 
             if (linkTab) {
-                const url = document.getElementById('docLink').value.trim();
+                const url = document.getElementById('docLink')?.value.trim();
                 if (!url) {
                     alert('Введите ссылку на документ');
                     return;
                 }
                 savedDocuments.push({ title, description, url, type: 'link', date: new Date().toISOString() });
+                saveAndRender();
             } else {
                 const fileInput = document.getElementById('docFileInput');
-                if (!fileInput.files.length) {
+                if (!fileInput?.files.length) {
                     alert('Выберите файл для загрузки');
                     return;
                 }
@@ -5055,17 +5069,22 @@
                         fileName: file.name,
                         date: new Date().toISOString()
                     });
-                    localStorage.setItem('dtuDocuments', JSON.stringify(savedDocuments));
-                    renderSavedDocuments();
-                    resetDocForm();
+                    saveAndRender();
                 };
                 reader.readAsDataURL(file);
-                return;
             }
+        }
 
-            localStorage.setItem('dtuDocuments', JSON.stringify(savedDocuments));
-            renderSavedDocuments();
-            resetDocForm();
+        function saveAndRender() {
+            try {
+                localStorage.setItem('dtuDocuments', JSON.stringify(savedDocuments));
+            } catch (e) {
+                console.error('Ошибка сохранения:', e);
+            }
+            requestAnimationFrame(() => {
+                renderSavedDocuments();
+                resetDocForm();
+            });
         }
 
         function deleteDocument(index) {
