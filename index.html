@@ -2638,6 +2638,130 @@
             color: #EF4444;
         }
 
+        /* File icon with extension */
+        .document-icon.file-icon {
+            position: relative;
+        }
+
+        .document-icon .file-ext {
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--card-bg);
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+
+        .download-btn {
+            background: #10B981 !important;
+        }
+
+        .download-btn:hover {
+            background: #059669 !important;
+        }
+
+        /* Admin mode tabs */
+        .admin-mode-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .admin-mode-tab {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .admin-mode-tab:hover {
+            background: var(--hover);
+        }
+
+        .admin-mode-tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .admin-mode-content {
+            display: none;
+        }
+
+        .admin-mode-content.active {
+            display: block;
+        }
+
+        /* Delete list styles */
+        .delete-list-header p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .delete-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+
+        .delete-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: var(--hover);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .delete-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .delete-item-title {
+            font-size: 0.875rem;
+            color: var(--text);
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-right: 1rem;
+        }
+
+        .delete-item-btn {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .delete-item-btn:hover {
+            background: #FEE2E2;
+            border-color: #EF4444;
+            color: #EF4444;
+        }
+
         @media (max-width: 640px) {
             .documents-container {
                 padding: 1rem;
@@ -3680,39 +3804,61 @@
 
                 <!-- Document Add Form (shown after login) -->
                 <div class="admin-form" id="docsAdminForm" style="display: none;">
-                    <div class="form-group">
-                        <label>Название документа</label>
-                        <input type="text" id="newDocTitle" placeholder="Введите название документа">
+                    <!-- Admin tabs for Add/Delete -->
+                    <div class="admin-mode-tabs">
+                        <button class="admin-mode-tab active" onclick="switchDocsAdminMode('add')">Добавить</button>
+                        <button class="admin-mode-tab" onclick="switchDocsAdminMode('delete')">Удалить</button>
                     </div>
-                    <div class="form-group">
-                        <label>Описание (необязательно)</label>
-                        <input type="text" id="newDocDescription" placeholder="Краткое описание">
-                    </div>
-                    <div class="form-tabs" id="docsFormTabs">
-                        <button class="form-tab active" onclick="switchDocsFormTab('link')">Ссылка на Google Docs</button>
-                        <button class="form-tab" onclick="switchDocsFormTab('upload')">Загрузить файл</button>
-                    </div>
-                    <div class="form-tab-content active" id="docsLinkFormContent">
+
+                    <!-- Add Document Section -->
+                    <div class="admin-mode-content active" id="docsAddMode">
                         <div class="form-group">
-                            <label>Ссылка на документ</label>
-                            <input type="url" id="newDocLink" placeholder="https://docs.google.com/...">
+                            <label>Название документа</label>
+                            <input type="text" id="newDocTitle" placeholder="Введите название документа">
+                        </div>
+                        <div class="form-group">
+                            <label>Описание (необязательно)</label>
+                            <input type="text" id="newDocDescription" placeholder="Краткое описание">
+                        </div>
+                        <div class="form-tabs" id="docsFormTabs">
+                            <button class="form-tab active" onclick="switchDocsFormTab('link')">Ссылка на Google Docs</button>
+                            <button class="form-tab" onclick="switchDocsFormTab('upload')">Загрузить файл</button>
+                        </div>
+                        <div class="form-tab-content active" id="docsLinkFormContent">
+                            <div class="form-group">
+                                <label>Ссылка на документ</label>
+                                <input type="url" id="newDocLink" placeholder="https://docs.google.com/...">
+                            </div>
+                        </div>
+                        <div class="form-tab-content" id="docsUploadFormContent">
+                            <div class="upload-zone" id="newDocUploadZone">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                    <path d="M17 8l-5-5-5 5"/>
+                                    <path d="M12 3v12"/>
+                                </svg>
+                                <p>Перетащите файл сюда или нажмите для выбора</p>
+                                <input type="file" id="newDocFileInput" style="display: none;" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png">
+                            </div>
+                            <p id="selectedFileName" style="margin-top: 0.5rem; color: var(--primary); font-size: 0.875rem;"></p>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn-cancel" onclick="docsAdminLogout()">Выйти</button>
+                            <button class="btn-add" onclick="addNewDocument()">Добавить</button>
                         </div>
                     </div>
-                    <div class="form-tab-content" id="docsUploadFormContent">
-                        <div class="upload-zone" id="newDocUploadZone">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                                <path d="M17 8l-5-5-5 5"/>
-                                <path d="M12 3v12"/>
-                            </svg>
-                            <p>Перетащите файл сюда или нажмите для выбора</p>
-                            <input type="file" id="newDocFileInput" style="display: none;" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png">
+
+                    <!-- Delete Document Section -->
+                    <div class="admin-mode-content" id="docsDeleteMode">
+                        <div class="delete-list-header">
+                            <p>Выберите документ для удаления:</p>
                         </div>
-                        <p id="selectedFileName" style="margin-top: 0.5rem; color: var(--primary); font-size: 0.875rem;"></p>
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn-cancel" onclick="docsAdminLogout()">Выйти</button>
-                        <button class="btn-add" onclick="addNewDocument()">Добавить</button>
+                        <div class="delete-list" id="docsDeleteList">
+                            <!-- Populated by renderDeleteList() -->
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn-cancel" onclick="docsAdminLogout()">Выйти</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -5033,6 +5179,10 @@
                 document.getElementById('docsAdminForm').style.display = 'block';
                 document.getElementById('docsToggleText').textContent = 'Добавить документ';
 
+                // Reset to add mode and update delete list
+                switchDocsAdminMode('add');
+                renderDeleteList();
+
             } catch (error) {
                 errorEl.textContent = 'Ошибка проверки пароля';
                 errorEl.style.display = 'block';
@@ -5063,6 +5213,23 @@
             }
         }
 
+        function switchDocsAdminMode(mode) {
+            const modeTabs = document.querySelectorAll('.admin-mode-tab');
+            modeTabs.forEach(tab => tab.classList.remove('active'));
+
+            document.getElementById('docsAddMode')?.classList.remove('active');
+            document.getElementById('docsDeleteMode')?.classList.remove('active');
+
+            if (mode === 'add') {
+                modeTabs[0]?.classList.add('active');
+                document.getElementById('docsAddMode')?.classList.add('active');
+            } else {
+                modeTabs[1]?.classList.add('active');
+                document.getElementById('docsDeleteMode')?.classList.add('active');
+                renderDeleteList();
+            }
+        }
+
         // Load documents from localStorage
         let savedDocuments = JSON.parse(localStorage.getItem('dtuDocuments') || '[]');
 
@@ -5076,39 +5243,93 @@
 
             savedDocuments.forEach((doc, index) => {
                 const card = document.createElement('div');
+                const isSupabaseFile = doc.storage === 'supabase';
                 card.className = `document-card ${doc.type === 'link' ? 'gdoc' : 'uploaded'} dynamic`;
-                card.innerHTML = `
-                    <div class="document-icon">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                            <path d="M14 2v6h6"/>
-                            <path d="M16 13H8"/>
-                            <path d="M16 17H8"/>
-                            <path d="M10 9H8"/>
-                        </svg>
-                    </div>
-                    <div class="document-info">
-                        <h3>${escapeHtml(doc.title)}</h3>
-                        <p class="document-meta">${escapeHtml(doc.description) || (doc.type === 'link' ? 'Google Документ' : 'Загруженный файл')}</p>
-                    </div>
-                    <a href="${escapeHtml(doc.url)}" target="_blank" class="document-link">
-                        <span>Открыть</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
-                            <path d="M15 3h6v6"/>
-                            <path d="M10 14L21 3"/>
-                        </svg>
-                    </a>
-                    ${adminPassword ? `<button class="document-delete" onclick="deleteListDocument(${index})" title="Удалить">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+                // Different rendering for Supabase files (preview + download) vs links (open)
+                if (isSupabaseFile) {
+                    const fileExt = doc.originalName?.split('.').pop()?.toUpperCase() || 'FILE';
+                    const fileSize = doc.fileSize ? formatFileSize(doc.fileSize) : '';
+                    card.innerHTML = `
+                        <div class="document-icon file-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                <path d="M14 2v6h6"/>
+                            </svg>
+                            <span class="file-ext">${fileExt}</span>
+                        </div>
+                        <div class="document-info">
+                            <h3>${escapeHtml(doc.title)}</h3>
+                            <p class="document-meta">${escapeHtml(doc.originalName || doc.description)}${fileSize ? ' • ' + fileSize : ''}</p>
+                        </div>
+                        <a href="${escapeHtml(doc.url)}" download="${escapeHtml(doc.originalName || doc.title)}" class="document-link download-btn" title="Скачать файл">
+                            <span>Скачать</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <path d="M7 10l5 5 5-5"/>
+                                <path d="M12 15V3"/>
+                            </svg>
+                        </a>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="document-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                <path d="M14 2v6h6"/>
+                                <path d="M16 13H8"/>
+                                <path d="M16 17H8"/>
+                                <path d="M10 9H8"/>
+                            </svg>
+                        </div>
+                        <div class="document-info">
+                            <h3>${escapeHtml(doc.title)}</h3>
+                            <p class="document-meta">${escapeHtml(doc.description) || 'Google Документ'}</p>
+                        </div>
+                        <a href="${escapeHtml(doc.url)}" target="_blank" class="document-link">
+                            <span>Открыть</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                                <path d="M15 3h6v6"/>
+                                <path d="M10 14L21 3"/>
+                            </svg>
+                        </a>
+                    `;
+                }
+                list.appendChild(card);
+            });
+
+            // Update delete list in admin panel if visible
+            renderDeleteList();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' Б';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
+        }
+
+        function renderDeleteList() {
+            const deleteList = document.getElementById('docsDeleteList');
+            if (!deleteList) return;
+
+            if (savedDocuments.length === 0) {
+                deleteList.innerHTML = '<p style="color: #64748B; font-size: 0.875rem;">Нет добавленных документов</p>';
+                return;
+            }
+
+            deleteList.innerHTML = savedDocuments.map((doc, index) => `
+                <div class="delete-item">
+                    <span class="delete-item-title">${escapeHtml(doc.title)}</span>
+                    <button class="delete-item-btn" onclick="deleteListDocument(${index})" title="Удалить">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 6h18"/>
                             <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>
                             <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                         </svg>
-                    </button>` : ''}
-                `;
-                list.appendChild(card);
-            });
+                    </button>
+                </div>
+            `).join('');
         }
 
         function escapeHtml(text) {
