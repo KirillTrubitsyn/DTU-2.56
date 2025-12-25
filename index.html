@@ -5099,13 +5099,13 @@
                             <path d="M10 14L21 3"/>
                         </svg>
                     </a>
-                    <button class="document-delete" onclick="deleteListDocument(${index})" title="Удалить">
+                    ${adminPassword ? `<button class="document-delete" onclick="deleteListDocument(${index})" title="Удалить">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 6h18"/>
                             <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>
                             <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                         </svg>
-                    </button>
+                    </button>` : ''}
                 `;
                 list.appendChild(card);
             });
@@ -5143,19 +5143,80 @@
                     alert('Выберите файл для загрузки');
                     return;
                 }
-                // For file upload, we'll create a data URL (for demo purposes)
+
                 const file = fileInput.files[0];
+
+                // Check file size (max 10MB for Supabase)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('Файл слишком большой (максимум 10 МБ).');
+                    return;
+                }
+
+                // Show loading state
+                const addBtn = document.querySelector('#docsAdminForm .btn-add');
+                const originalText = addBtn?.textContent;
+                if (addBtn) {
+                    addBtn.textContent = 'Загрузка в хранилище...';
+                    addBtn.disabled = true;
+                }
+
+                // Read file and upload to Supabase Storage
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    savedDocuments.push({
-                        title,
-                        description: description || file.name,
-                        url: e.target.result,
-                        type: 'file',
-                        fileName: file.name,
-                        date: new Date().toISOString()
-                    });
-                    saveAndRenderDocs();
+                reader.onload = async function(e) {
+                    try {
+                        const response = await fetch('/api/files', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                password: adminPassword,
+                                fileName: file.name,
+                                fileData: e.target.result,
+                                contentType: file.type,
+                                title: title,
+                                description: description
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Ошибка загрузки');
+                        }
+
+                        // Save document metadata with Supabase URL
+                        savedDocuments.push({
+                            title,
+                            description: description || file.name,
+                            url: data.file.url,
+                            type: 'file',
+                            fileName: data.file.name,
+                            originalName: file.name,
+                            fileSize: file.size,
+                            date: new Date().toISOString(),
+                            storage: 'supabase'
+                        });
+
+                        if (addBtn) {
+                            addBtn.textContent = originalText;
+                            addBtn.disabled = false;
+                        }
+                        saveAndRenderDocs();
+
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                        alert('Ошибка загрузки: ' + error.message);
+                        if (addBtn) {
+                            addBtn.textContent = originalText;
+                            addBtn.disabled = false;
+                        }
+                    }
+                };
+                reader.onerror = function() {
+                    alert('Ошибка чтения файла');
+                    if (addBtn) {
+                        addBtn.textContent = originalText;
+                        addBtn.disabled = false;
+                    }
                 };
                 reader.readAsDataURL(file);
             }
@@ -5175,8 +5236,31 @@
             });
         }
 
-        function deleteListDocument(index) {
+        async function deleteListDocument(index) {
+            if (!adminPassword) {
+                alert('Удаление документов доступно только администратору');
+                return;
+            }
+
             if (confirm('Удалить этот документ?')) {
+                const doc = savedDocuments[index];
+
+                // If file was stored in Supabase, delete from storage too
+                if (doc.storage === 'supabase' && doc.fileName) {
+                    try {
+                        await fetch('/api/files', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                password: adminPassword,
+                                fileName: doc.fileName
+                            })
+                        });
+                    } catch (error) {
+                        console.error('Error deleting from storage:', error);
+                    }
+                }
+
                 savedDocuments.splice(index, 1);
                 localStorage.setItem('dtuDocuments', JSON.stringify(savedDocuments));
                 renderSavedDocuments();
