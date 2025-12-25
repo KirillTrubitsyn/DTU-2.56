@@ -54,6 +54,7 @@
             --text: #2d3748;
             --text-muted: #718096;
             --border: #e2e8f0;
+            --hover: rgba(37, 99, 235, 0.05);
         }
 
         * {
@@ -2725,6 +2726,14 @@
             background: var(--hover);
             border-radius: 8px;
             margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .delete-item:hover {
+            background: #FEE2E2;
+            border-color: #EF4444;
         }
 
         .delete-item:last-child {
@@ -2739,6 +2748,10 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             margin-right: 1rem;
+        }
+
+        .delete-item:hover .delete-item-title {
+            color: #EF4444;
         }
 
         .delete-item-btn {
@@ -2756,6 +2769,7 @@
             flex-shrink: 0;
         }
 
+        .delete-item:hover .delete-item-btn,
         .delete-item-btn:hover {
             background: #FEE2E2;
             border-color: #EF4444;
@@ -5414,15 +5428,15 @@
             }
 
             deleteList.innerHTML = savedDocuments.map((doc, index) => `
-                <div class="delete-item">
+                <div class="delete-item" onclick="deleteListDocument(${index})" title="Нажмите для удаления">
                     <span class="delete-item-title">${escapeHtml(doc.title)}</span>
-                    <button class="delete-item-btn" onclick="deleteListDocument(${index})" title="Удалить">
+                    <span class="delete-item-btn">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 6h18"/>
                             <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>
                             <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                         </svg>
-                    </button>
+                    </span>
                 </div>
             `).join('');
         }
