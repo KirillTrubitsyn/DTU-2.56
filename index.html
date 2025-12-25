@@ -3981,58 +3981,9 @@
                 </div>
             </div>
 
-            <!-- Documents List -->
+            <!-- Documents List - All documents rendered dynamically -->
             <div class="documents-list" id="documentsList">
-                <!-- Google Docs Links -->
-                <div class="document-card gdoc">
-                    <div class="document-icon">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                            <path d="M14 2v6h6"/>
-                            <path d="M16 13H8"/>
-                            <path d="M16 17H8"/>
-                            <path d="M10 9H8"/>
-                        </svg>
-                    </div>
-                    <div class="document-info">
-                        <h3>Справка о споре РПН - ДТУ на 23.12.2025</h3>
-                        <p class="document-meta">Google Документ</p>
-                    </div>
-                    <a href="https://docs.google.com/document/d/1IpoDPWQt_rzvd8tXr3yG_7bxQQqtQepi/edit?usp=drive_link&ouid=100981517467924755686&rtpof=true&sd=true" target="_blank" class="document-link">
-                        <span>Открыть</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
-                            <path d="M15 3h6v6"/>
-                            <path d="M10 14L21 3"/>
-                        </svg>
-                    </a>
-                </div>
-
-                <div class="document-card gdoc">
-                    <div class="document-icon">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                            <path d="M14 2v6h6"/>
-                            <path d="M16 13H8"/>
-                            <path d="M16 17H8"/>
-                            <path d="M10 9H8"/>
-                        </svg>
-                    </div>
-                    <div class="document-info">
-                        <h3>Таймлайн дела</h3>
-                        <p class="document-meta">Google Документ</p>
-                    </div>
-                    <a href="https://docs.google.com/document/d/1D92lJRMqVtFQ96VA-7X2DTsjjhOx9HCS/edit?usp=drive_link&ouid=100981517467924755686&rtpof=true&sd=true" target="_blank" class="document-link">
-                        <span>Открыть</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
-                            <path d="M15 3h6v6"/>
-                            <path d="M10 14L21 3"/>
-                        </svg>
-                    </a>
-                </div>
-
-                <!-- Dynamically added documents will appear here -->
+                <!-- Documents will be rendered by JavaScript -->
             </div>
         </div>
     </div>
@@ -5355,15 +5306,35 @@
         }
 
         // Load documents from localStorage
+        // Default documents (added on first load)
+        const defaultDocuments = [
+            {
+                title: 'Справка о споре РПН - ДТУ на 23.12.2025',
+                description: 'Google Документ',
+                url: 'https://docs.google.com/document/d/1IpoDPWQt_rzvd8tXr3yG_7bxQQqtQepi/edit?usp=drive_link&ouid=100981517467924755686&rtpof=true&sd=true',
+                type: 'link',
+                isDefault: true
+            },
+            {
+                title: 'Таймлайн дела',
+                description: 'Google Документ',
+                url: 'https://docs.google.com/document/d/1D92lJRMqVtFQ96VA-7X2DTsjjhOx9HCS/edit?usp=drive_link&ouid=100981517467924755686&rtpof=true&sd=true',
+                type: 'link',
+                isDefault: true
+            }
+        ];
+
+        // Load saved documents, add defaults if empty
         let savedDocuments = JSON.parse(localStorage.getItem('dtuDocuments') || '[]');
+        if (savedDocuments.length === 0) {
+            savedDocuments = [...defaultDocuments];
+            localStorage.setItem('dtuDocuments', JSON.stringify(savedDocuments));
+        }
 
         function renderSavedDocuments() {
             const list = document.getElementById('documentsList');
             if (!list) return;
-
-            // Find marker for dynamic documents
-            const existingDynamic = list.querySelectorAll('.document-card.dynamic');
-            existingDynamic.forEach(el => el.remove());
+            list.innerHTML = ''; // Clear all
 
             savedDocuments.forEach((doc, index) => {
                 const card = document.createElement('div');
