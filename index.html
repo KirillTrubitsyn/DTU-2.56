@@ -71,28 +71,23 @@
         }
 
         .header {
-            background: url('background.png');
-            background-size: cover;
-            background-position: center center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             color: white;
-            padding: 2.5rem 2rem;
+            padding: 2rem;
             text-align: center;
             position: relative;
             overflow: hidden;
         }
 
         .header::before {
-            display: none;
-        }
-
-        .header::after {
             content: '';
             position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--accent-gold), var(--strong), var(--accent-gold));
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            animation: pulse 15s infinite;
         }
 
         @keyframes pulse {
@@ -101,20 +96,18 @@
         }
 
         .header h1 {
-            font-size: 1.9rem;
+            font-size: 1.8rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
             position: relative;
             z-index: 1;
-            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 0, 0, 0.5);
-            letter-spacing: 0.5px;
         }
 
         .header .case-number {
             font-size: 1rem;
+            opacity: 0.9;
             position: relative;
             z-index: 1;
-            text-shadow: 0 2px 15px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 0, 0, 0.5);
         }
 
         .header .claim-amount {
@@ -128,7 +121,6 @@
             font-size: 1.1rem;
             position: relative;
             z-index: 1;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         .container {
