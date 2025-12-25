@@ -72,7 +72,7 @@
 
         .header {
             background:
-                linear-gradient(180deg, rgba(26, 54, 93, 0.45) 0%, rgba(26, 54, 93, 0.6) 100%),
+                linear-gradient(180deg, rgba(26, 54, 93, 0.15) 0%, rgba(26, 54, 93, 0.4) 100%),
                 url('background.png');
             background-size: cover;
             background-position: center top;
@@ -84,14 +84,7 @@
         }
 
         .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
-            animation: pulse 15s infinite;
+            display: none;
         }
 
         .header::after {
