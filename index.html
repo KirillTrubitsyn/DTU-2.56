@@ -5143,19 +5143,50 @@
                     alert('Выберите файл для загрузки');
                     return;
                 }
-                // For file upload, we'll create a data URL (for demo purposes)
+
                 const file = fileInput.files[0];
+
+                // Check file size (max 2MB for localStorage to avoid blocking)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Файл слишком большой (максимум 2 МБ).\n\nДля больших файлов загрузите документ на Google Drive и добавьте ссылку.');
+                    return;
+                }
+
+                // Show loading state
+                const addBtn = document.querySelector('#docsAdminForm .btn-add');
+                const originalText = addBtn?.textContent;
+                if (addBtn) {
+                    addBtn.textContent = 'Загрузка...';
+                    addBtn.disabled = true;
+                }
+
+                // Read file asynchronously
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    savedDocuments.push({
-                        title,
-                        description: description || file.name,
-                        url: e.target.result,
-                        type: 'file',
-                        fileName: file.name,
-                        date: new Date().toISOString()
+                    requestAnimationFrame(() => {
+                        savedDocuments.push({
+                            title,
+                            description: description || file.name,
+                            url: e.target.result,
+                            type: 'file',
+                            fileName: file.name,
+                            fileSize: file.size,
+                            date: new Date().toISOString()
+                        });
+
+                        if (addBtn) {
+                            addBtn.textContent = originalText;
+                            addBtn.disabled = false;
+                        }
+                        saveAndRenderDocs();
                     });
-                    saveAndRenderDocs();
+                };
+                reader.onerror = function() {
+                    alert('Ошибка чтения файла');
+                    if (addBtn) {
+                        addBtn.textContent = originalText;
+                        addBtn.disabled = false;
+                    }
                 };
                 reader.readAsDataURL(file);
             }
