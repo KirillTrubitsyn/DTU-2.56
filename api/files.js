@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
 );
 
 // Пароль администратора
@@ -18,6 +18,26 @@ export const config = {
     },
   },
 };
+
+// Ensure bucket exists
+async function ensureBucket() {
+  try {
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const exists = buckets?.some(b => b.name === BUCKET_NAME);
+
+    if (!exists) {
+      const { error } = await supabase.storage.createBucket(BUCKET_NAME, {
+        public: true,
+        fileSizeLimit: 10485760 // 10MB
+      });
+      if (error && !error.message?.includes('already exists')) {
+        console.error('Create bucket error:', error);
+      }
+    }
+  } catch (e) {
+    console.error('Bucket check error:', e);
+  }
+}
 
 export default async function handler(req, res) {
   // CORS headers
@@ -81,6 +101,9 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Требуется имя файла и данные' });
       }
 
+      // Ensure bucket exists before upload
+      await ensureBucket();
+
       // Decode base64 data
       const base64Data = fileData.split(',')[1] || fileData;
       const buffer = Buffer.from(base64Data, 'base64');
@@ -100,7 +123,13 @@ export default async function handler(req, res) {
 
       if (error) {
         console.error('Upload error:', error);
-        throw error;
+        return res.status(500).json({
+          error: 'Ошибка загрузки в хранилище',
+          details: error.message,
+          hint: error.message?.includes('Bucket not found')
+            ? 'Bucket "documents" не найден. Добавьте SUPABASE_SERVICE_ROLE_KEY в переменные среды для автосоздания.'
+            : null
+        });
       }
 
       // Get public URL
