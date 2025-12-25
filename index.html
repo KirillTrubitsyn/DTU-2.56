@@ -5146,9 +5146,9 @@
 
                 const file = fileInput.files[0];
 
-                // Check file size (max 2MB for localStorage to avoid blocking)
-                if (file.size > 2 * 1024 * 1024) {
-                    alert('Файл слишком большой (максимум 2 МБ).\n\nДля больших файлов загрузите документ на Google Drive и добавьте ссылку.');
+                // Check file size (max 10MB for Supabase)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('Файл слишком большой (максимум 10 МБ).');
                     return;
                 }
 
@@ -5156,22 +5156,44 @@
                 const addBtn = document.querySelector('#docsAdminForm .btn-add');
                 const originalText = addBtn?.textContent;
                 if (addBtn) {
-                    addBtn.textContent = 'Загрузка...';
+                    addBtn.textContent = 'Загрузка в хранилище...';
                     addBtn.disabled = true;
                 }
 
-                // Read file asynchronously
+                // Read file and upload to Supabase Storage
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    requestAnimationFrame(() => {
+                reader.onload = async function(e) {
+                    try {
+                        const response = await fetch('/api/files', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                password: adminPassword,
+                                fileName: file.name,
+                                fileData: e.target.result,
+                                contentType: file.type,
+                                title: title,
+                                description: description
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Ошибка загрузки');
+                        }
+
+                        // Save document metadata with Supabase URL
                         savedDocuments.push({
                             title,
                             description: description || file.name,
-                            url: e.target.result,
+                            url: data.file.url,
                             type: 'file',
-                            fileName: file.name,
+                            fileName: data.file.name,
+                            originalName: file.name,
                             fileSize: file.size,
-                            date: new Date().toISOString()
+                            date: new Date().toISOString(),
+                            storage: 'supabase'
                         });
 
                         if (addBtn) {
@@ -5179,7 +5201,15 @@
                             addBtn.disabled = false;
                         }
                         saveAndRenderDocs();
-                    });
+
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                        alert('Ошибка загрузки: ' + error.message);
+                        if (addBtn) {
+                            addBtn.textContent = originalText;
+                            addBtn.disabled = false;
+                        }
+                    }
                 };
                 reader.onerror = function() {
                     alert('Ошибка чтения файла');

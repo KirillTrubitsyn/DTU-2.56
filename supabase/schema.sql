@@ -125,6 +125,32 @@ CREATE POLICY "Anyone can read chat history" ON chat_history
 -- (Раскомментируйте для добавления тестовых данных)
 -- =====================================================
 
+-- =====================================================
+-- Storage Bucket для файлов документов
+-- =====================================================
+
+-- Создаём публичный bucket для документов (выполните в SQL Editor)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('documents', 'documents', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Политика: все могут читать файлы
+CREATE POLICY "Public read access for documents" ON storage.objects
+  FOR SELECT USING (bucket_id = 'documents');
+
+-- Политика: авторизованные могут загружать файлы
+CREATE POLICY "Authenticated users can upload documents" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'documents');
+
+-- Политика: авторизованные могут удалять файлы
+CREATE POLICY "Authenticated users can delete documents" ON storage.objects
+  FOR DELETE USING (bucket_id = 'documents');
+
+-- =====================================================
+-- Примеры данных для начала работы
+-- (Раскомментируйте для добавления тестовых данных)
+-- =====================================================
+
 /*
 INSERT INTO documents (title, content, source, category) VALUES
 (
