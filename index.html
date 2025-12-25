@@ -2762,6 +2762,93 @@
             color: #EF4444;
         }
 
+        /* Knowledge Base Styles */
+        .knowledge-info {
+            margin-bottom: 1rem;
+        }
+
+        .knowledge-info p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .knowledge-upload-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .knowledge-upload-zone:hover {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.03);
+        }
+
+        .knowledge-upload-zone svg {
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .knowledge-upload-zone p {
+            color: var(--text);
+            margin-bottom: 0.25rem;
+        }
+
+        .knowledge-upload-zone .hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .knowledge-stats {
+            margin: 1rem 0;
+            padding: 0.75rem;
+            background: var(--hover);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .knowledge-stats strong {
+            color: var(--primary);
+        }
+
+        .knowledge-list {
+            max-height: 250px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+
+        .knowledge-doc-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.625rem 0.75rem;
+            background: var(--hover);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .knowledge-doc-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .knowledge-doc-title {
+            font-size: 0.875rem;
+            color: var(--text);
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-right: 0.75rem;
+        }
+
         @media (max-width: 640px) {
             .documents-container {
                 padding: 1rem;
@@ -3804,10 +3891,11 @@
 
                 <!-- Document Add Form (shown after login) -->
                 <div class="admin-form" id="docsAdminForm" style="display: none;">
-                    <!-- Admin tabs for Add/Delete -->
+                    <!-- Admin tabs for Add/Delete/Knowledge Base -->
                     <div class="admin-mode-tabs">
                         <button class="admin-mode-tab active" onclick="switchDocsAdminMode('add')">Добавить</button>
                         <button class="admin-mode-tab" onclick="switchDocsAdminMode('delete')">Удалить</button>
+                        <button class="admin-mode-tab" onclick="switchDocsAdminMode('knowledge')">База знаний AI</button>
                     </div>
 
                     <!-- Add Document Section -->
@@ -3855,6 +3943,36 @@
                         </div>
                         <div class="delete-list" id="docsDeleteList">
                             <!-- Populated by renderDeleteList() -->
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn-cancel" onclick="docsAdminLogout()">Выйти</button>
+                        </div>
+                    </div>
+
+                    <!-- Knowledge Base Section -->
+                    <div class="admin-mode-content" id="docsKnowledgeMode">
+                        <div class="knowledge-info">
+                            <p>Загрузите документы для анализа ИИ-ассистентом. Поддерживаемые форматы: PDF, DOCX, изображения, TXT, MD.</p>
+                        </div>
+                        <div class="knowledge-upload-zone" id="knowledgeUploadZone" onclick="document.getElementById('knowledgeFileInput').click()">
+                            <input type="file" id="knowledgeFileInput" accept="image/*,.pdf,.md,.txt,.docx" onchange="handleKnowledgeFileSelect(event)" style="display: none;">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <path d="M17 8l-5-5-5 5"/>
+                                <path d="M12 3v12"/>
+                            </svg>
+                            <p>Перетащите файл или нажмите для выбора</p>
+                            <span class="hint">PDF, DOCX, изображения, TXT, MD</span>
+                        </div>
+                        <div id="knowledgeProcessing" style="display: none; text-align: center; padding: 1rem;">
+                            <div class="spinner" style="margin: 0 auto 0.5rem;"></div>
+                            <span id="knowledgeProcessingText">Обработка документа...</span>
+                        </div>
+                        <div class="knowledge-stats">
+                            <span>Документов в базе: <strong id="knowledgeDocCount">0</strong></span>
+                        </div>
+                        <div class="knowledge-list" id="knowledgeDocsList">
+                            <!-- Populated by renderKnowledgeDocs() -->
                         </div>
                         <div class="form-actions">
                             <button class="btn-cancel" onclick="docsAdminLogout()">Выйти</button>
@@ -5220,14 +5338,19 @@
 
             document.getElementById('docsAddMode')?.classList.remove('active');
             document.getElementById('docsDeleteMode')?.classList.remove('active');
+            document.getElementById('docsKnowledgeMode')?.classList.remove('active');
 
             if (mode === 'add') {
                 modeTabs[0]?.classList.add('active');
                 document.getElementById('docsAddMode')?.classList.add('active');
-            } else {
+            } else if (mode === 'delete') {
                 modeTabs[1]?.classList.add('active');
                 document.getElementById('docsDeleteMode')?.classList.add('active');
                 renderDeleteList();
+            } else if (mode === 'knowledge') {
+                modeTabs[2]?.classList.add('active');
+                document.getElementById('docsKnowledgeMode')?.classList.add('active');
+                renderKnowledgeDocs();
             }
         }
 
@@ -5558,7 +5681,221 @@
 
             // Render saved documents
             renderSavedDocuments();
+
+            // Initialize knowledge upload zone
+            initKnowledgeUploadZone();
         });
+
+        // ========== Knowledge Base Functions ==========
+        function initKnowledgeUploadZone() {
+            const uploadZone = document.getElementById('knowledgeUploadZone');
+            const fileInput = document.getElementById('knowledgeFileInput');
+
+            if (uploadZone && fileInput) {
+                uploadZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadZone.style.borderColor = 'var(--primary)';
+                    uploadZone.style.background = 'rgba(37, 99, 235, 0.05)';
+                });
+
+                uploadZone.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadZone.style.borderColor = 'var(--border)';
+                    uploadZone.style.background = '';
+                });
+
+                uploadZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadZone.style.borderColor = 'var(--border)';
+                    uploadZone.style.background = '';
+
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        processKnowledgeFile(files[0]);
+                    }
+                });
+            }
+        }
+
+        function handleKnowledgeFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                processKnowledgeFile(files[0]);
+            }
+            e.target.value = ''; // Reset input
+        }
+
+        async function processKnowledgeFile(file) {
+            const isImage = file.type.startsWith('image/');
+            const isPDF = file.type === 'application/pdf';
+            const isText = file.name.endsWith('.md') || file.name.endsWith('.txt') || file.type === 'text/plain';
+            const isDOCX = file.name.endsWith('.docx');
+
+            if (!isImage && !isPDF && !isText && !isDOCX) {
+                alert('Поддерживаются: изображения, PDF, DOCX, Markdown, TXT');
+                return;
+            }
+
+            const maxSize = (isPDF || isDOCX) ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert(`Файл слишком большой. Максимум ${(isPDF || isDOCX) ? '20' : '10'} МБ`);
+                return;
+            }
+
+            // Show processing state
+            const processing = document.getElementById('knowledgeProcessing');
+            const uploadZone = document.getElementById('knowledgeUploadZone');
+            if (processing) processing.style.display = 'block';
+            if (uploadZone) uploadZone.style.display = 'none';
+
+            try {
+                let content = '';
+                let title = file.name;
+
+                // Read file content based on type
+                if (isText) {
+                    content = await file.text();
+                } else if (isImage) {
+                    // For images, use OCR via API
+                    document.getElementById('knowledgeProcessingText').textContent = 'Распознавание текста...';
+                    const base64 = await fileToBase64(file);
+                    const ocrResponse = await fetch('/api/ocr', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: base64, password: docsAdminPassword })
+                    });
+                    const ocrData = await ocrResponse.json();
+                    if (ocrData.text) {
+                        content = ocrData.text;
+                        if (ocrData.title) title = ocrData.title;
+                    }
+                } else if (isPDF || isDOCX) {
+                    // For PDF/DOCX, send to API
+                    document.getElementById('knowledgeProcessingText').textContent = 'Обработка документа...';
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('password', docsAdminPassword);
+
+                    const parseResponse = await fetch('/api/parse', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const parseData = await parseResponse.json();
+                    if (parseData.text) {
+                        content = parseData.text;
+                        if (parseData.title) title = parseData.title;
+                    }
+                }
+
+                if (!content) {
+                    throw new Error('Не удалось извлечь текст из документа');
+                }
+
+                // Save to knowledge base via API
+                document.getElementById('knowledgeProcessingText').textContent = 'Сохранение в базу знаний...';
+                const saveResponse = await fetch('/api/documents', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        password: docsAdminPassword,
+                        title: title,
+                        content: content,
+                        category: 'документ'
+                    })
+                });
+
+                if (!saveResponse.ok) {
+                    const errData = await saveResponse.json();
+                    throw new Error(errData.error || 'Ошибка сохранения');
+                }
+
+                alert('Документ добавлен в базу знаний!');
+                renderKnowledgeDocs();
+
+            } catch (error) {
+                console.error('Knowledge upload error:', error);
+                alert('Ошибка: ' + error.message);
+            } finally {
+                if (processing) processing.style.display = 'none';
+                if (uploadZone) uploadZone.style.display = 'flex';
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function renderKnowledgeDocs() {
+            const listEl = document.getElementById('knowledgeDocsList');
+            const countEl = document.getElementById('knowledgeDocCount');
+            if (!listEl) return;
+
+            try {
+                const response = await fetch(`/api/documents?password=${encodeURIComponent(docsAdminPassword)}&page=1&limit=50`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    listEl.innerHTML = '<p style="color: #EF4444;">Ошибка загрузки</p>';
+                    return;
+                }
+
+                if (countEl) countEl.textContent = data.total || 0;
+
+                if (!data.documents || data.documents.length === 0) {
+                    listEl.innerHTML = '<p style="color: #64748B; font-size: 0.875rem;">База знаний пуста</p>';
+                    return;
+                }
+
+                listEl.innerHTML = data.documents.map(doc => `
+                    <div class="knowledge-doc-item">
+                        <span class="knowledge-doc-title">${escapeHtml(doc.title)}</span>
+                        <button class="delete-item-btn" onclick="deleteKnowledgeDoc('${doc.id}')" title="Удалить">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18"/>
+                                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>
+                                <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Load knowledge docs error:', error);
+                listEl.innerHTML = '<p style="color: #EF4444;">Ошибка загрузки</p>';
+            }
+        }
+
+        async function deleteKnowledgeDoc(docId) {
+            if (!confirm('Удалить этот документ из базы знаний?')) return;
+
+            try {
+                const response = await fetch('/api/documents', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        password: docsAdminPassword,
+                        id: docId
+                    })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Ошибка удаления');
+                }
+
+                renderKnowledgeDocs();
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            }
+        }
 
         // ========== Timeline Accordion Functions ==========
         function toggleTimelineSection(header) {
