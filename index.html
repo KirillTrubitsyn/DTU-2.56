@@ -3657,46 +3657,46 @@
             </div>
 
             <!-- Admin Panel for Adding Documents -->
-            <div class="admin-panel" id="adminPanel">
-                <div class="admin-toggle" onclick="toggleAdminPanel()">
+            <div class="admin-panel" id="docsAdminPanel">
+                <div class="admin-toggle" onclick="toggleDocsPanel()">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 4v16m8-8H4"/>
                     </svg>
                     Добавить документ
                 </div>
-                <div class="admin-form" id="adminForm" style="display: none;">
+                <div class="admin-form" id="docsAdminForm" style="display: none;">
                     <div class="form-group">
                         <label>Название документа</label>
-                        <input type="text" id="docTitle" placeholder="Введите название документа">
+                        <input type="text" id="newDocTitle" placeholder="Введите название документа">
                     </div>
                     <div class="form-group">
                         <label>Описание (необязательно)</label>
-                        <input type="text" id="docDescription" placeholder="Краткое описание">
+                        <input type="text" id="newDocDescription" placeholder="Краткое описание">
                     </div>
-                    <div class="form-tabs">
-                        <button class="form-tab active" onclick="switchDocFormTab('link')">Ссылка на Google Docs</button>
-                        <button class="form-tab" onclick="switchDocFormTab('upload')">Загрузить файл</button>
+                    <div class="form-tabs" id="docsFormTabs">
+                        <button class="form-tab active" onclick="switchDocsFormTab('link')">Ссылка на Google Docs</button>
+                        <button class="form-tab" onclick="switchDocsFormTab('upload')">Загрузить файл</button>
                     </div>
-                    <div class="form-tab-content active" id="linkFormContent">
+                    <div class="form-tab-content active" id="docsLinkFormContent">
                         <div class="form-group">
                             <label>Ссылка на документ</label>
-                            <input type="url" id="docLink" placeholder="https://docs.google.com/...">
+                            <input type="url" id="newDocLink" placeholder="https://docs.google.com/...">
                         </div>
                     </div>
-                    <div class="form-tab-content" id="uploadFormContent">
-                        <div class="upload-zone" id="docUploadZone">
+                    <div class="form-tab-content" id="docsUploadFormContent">
+                        <div class="upload-zone" id="newDocUploadZone">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
                                 <path d="M17 8l-5-5-5 5"/>
                                 <path d="M12 3v12"/>
                             </svg>
                             <p>Перетащите файл сюда или нажмите для выбора</p>
-                            <input type="file" id="docFileInput" style="display: none;">
+                            <input type="file" id="newDocFileInput" style="display: none;">
                         </div>
                     </div>
                     <div class="form-actions">
-                        <button class="btn-cancel" onclick="toggleAdminPanel()">Отмена</button>
-                        <button class="btn-add" onclick="addDocument()">Добавить</button>
+                        <button class="btn-cancel" onclick="toggleDocsPanel()">Отмена</button>
+                        <button class="btn-add" onclick="addNewDocument()">Добавить</button>
                     </div>
                 </div>
             </div>
@@ -4956,24 +4956,26 @@
         }
 
         // ========== Documents Functions ==========
-        function toggleAdminPanel() {
-            const form = document.getElementById('adminForm');
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        function toggleDocsPanel() {
+            const form = document.getElementById('docsAdminForm');
+            if (form) {
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            }
         }
 
-        function switchDocFormTab(tabName) {
-            const formTabs = document.querySelectorAll('.form-tabs .form-tab');
-            const formContents = document.querySelectorAll('.admin-form .form-tab-content');
+        function switchDocsFormTab(tabName) {
+            const formTabs = document.querySelectorAll('#docsFormTabs .form-tab');
 
             formTabs.forEach(tab => tab.classList.remove('active'));
-            formContents.forEach(content => content.classList.remove('active'));
+            document.getElementById('docsLinkFormContent')?.classList.remove('active');
+            document.getElementById('docsUploadFormContent')?.classList.remove('active');
 
             if (tabName === 'link') {
                 formTabs[0]?.classList.add('active');
-                document.getElementById('linkFormContent')?.classList.add('active');
+                document.getElementById('docsLinkFormContent')?.classList.add('active');
             } else {
                 formTabs[1]?.classList.add('active');
-                document.getElementById('uploadFormContent')?.classList.add('active');
+                document.getElementById('docsUploadFormContent')?.classList.add('active');
             }
         }
 
@@ -5013,7 +5015,7 @@
                             <path d="M10 14L21 3"/>
                         </svg>
                     </a>
-                    <button class="document-delete" onclick="deleteDocument(${index})" title="Удалить">
+                    <button class="document-delete" onclick="deleteListDocument(${index})" title="Удалить">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 6h18"/>
                             <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>
@@ -5032,10 +5034,10 @@
             return div.innerHTML;
         }
 
-        function addDocument() {
-            const title = document.getElementById('docTitle')?.value.trim();
-            const description = document.getElementById('docDescription')?.value.trim();
-            const linkContent = document.getElementById('linkFormContent');
+        function addNewDocument() {
+            const title = document.getElementById('newDocTitle')?.value.trim();
+            const description = document.getElementById('newDocDescription')?.value.trim();
+            const linkContent = document.getElementById('docsLinkFormContent');
             const linkTab = linkContent?.classList.contains('active');
 
             if (!title) {
@@ -5044,15 +5046,15 @@
             }
 
             if (linkTab) {
-                const url = document.getElementById('docLink')?.value.trim();
+                const url = document.getElementById('newDocLink')?.value.trim();
                 if (!url) {
                     alert('Введите ссылку на документ');
                     return;
                 }
                 savedDocuments.push({ title, description, url, type: 'link', date: new Date().toISOString() });
-                saveAndRender();
+                saveAndRenderDocs();
             } else {
-                const fileInput = document.getElementById('docFileInput');
+                const fileInput = document.getElementById('newDocFileInput');
                 if (!fileInput?.files.length) {
                     alert('Выберите файл для загрузки');
                     return;
@@ -5069,13 +5071,13 @@
                         fileName: file.name,
                         date: new Date().toISOString()
                     });
-                    saveAndRender();
+                    saveAndRenderDocs();
                 };
                 reader.readAsDataURL(file);
             }
         }
 
-        function saveAndRender() {
+        function saveAndRenderDocs() {
             try {
                 localStorage.setItem('dtuDocuments', JSON.stringify(savedDocuments));
             } catch (e) {
@@ -5083,11 +5085,11 @@
             }
             requestAnimationFrame(() => {
                 renderSavedDocuments();
-                resetDocForm();
+                resetDocsForm();
             });
         }
 
-        function deleteDocument(index) {
+        function deleteListDocument(index) {
             if (confirm('Удалить этот документ?')) {
                 savedDocuments.splice(index, 1);
                 localStorage.setItem('dtuDocuments', JSON.stringify(savedDocuments));
@@ -5095,18 +5097,22 @@
             }
         }
 
-        function resetDocForm() {
-            document.getElementById('docTitle').value = '';
-            document.getElementById('docDescription').value = '';
-            document.getElementById('docLink').value = '';
-            document.getElementById('docFileInput').value = '';
-            toggleAdminPanel();
+        function resetDocsForm() {
+            const title = document.getElementById('newDocTitle');
+            const desc = document.getElementById('newDocDescription');
+            const link = document.getElementById('newDocLink');
+            const file = document.getElementById('newDocFileInput');
+            if (title) title.value = '';
+            if (desc) desc.value = '';
+            if (link) link.value = '';
+            if (file) file.value = '';
+            toggleDocsPanel();
         }
 
-        // Initialize upload zone
+        // Initialize upload zone for documents section
         document.addEventListener('DOMContentLoaded', function() {
-            const uploadZone = document.getElementById('docUploadZone');
-            const fileInput = document.getElementById('docFileInput');
+            const uploadZone = document.getElementById('newDocUploadZone');
+            const fileInput = document.getElementById('newDocFileInput');
 
             if (uploadZone && fileInput) {
                 uploadZone.addEventListener('click', () => fileInput.click());
