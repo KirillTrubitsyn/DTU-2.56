@@ -5099,13 +5099,13 @@
                             <path d="M10 14L21 3"/>
                         </svg>
                     </a>
-                    <button class="document-delete" onclick="deleteListDocument(${index})" title="Удалить">
+                    ${adminPassword ? `<button class="document-delete" onclick="deleteListDocument(${index})" title="Удалить">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 6h18"/>
                             <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>
                             <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                         </svg>
-                    </button>
+                    </button>` : ''}
                 `;
                 list.appendChild(card);
             });
@@ -5236,8 +5236,31 @@
             });
         }
 
-        function deleteListDocument(index) {
+        async function deleteListDocument(index) {
+            if (!adminPassword) {
+                alert('Удаление документов доступно только администратору');
+                return;
+            }
+
             if (confirm('Удалить этот документ?')) {
+                const doc = savedDocuments[index];
+
+                // If file was stored in Supabase, delete from storage too
+                if (doc.storage === 'supabase' && doc.fileName) {
+                    try {
+                        await fetch('/api/files', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                password: adminPassword,
+                                fileName: doc.fileName
+                            })
+                        });
+                    } catch (error) {
+                        console.error('Error deleting from storage:', error);
+                    }
+                }
+
                 savedDocuments.splice(index, 1);
                 localStorage.setItem('dtuDocuments', JSON.stringify(savedDocuments));
                 renderSavedDocuments();
