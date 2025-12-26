@@ -1894,7 +1894,7 @@
 
         /* Concept Gallery Styles */
         .concept-container {
-            max-width: 1200px;
+            max-width: 75%;
             margin: 0 auto;
             padding: 1.5rem 2rem;
         }
@@ -3263,7 +3263,7 @@
 
     <!-- Main Page Navigation Tabs -->
     <div class="main-tabs">
-        <button class="main-tab" onclick="switchMainTab('concept')" id="mainTabConcept">
+        <button class="main-tab active" onclick="switchMainTab('concept')" id="mainTabConcept">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2L2 7l10 5 10-5-10-5z"/>
                 <path d="M2 17l10 5 10-5"/>
@@ -3278,7 +3278,7 @@
             </svg>
             Линии защиты
         </button>
-        <button class="main-tab active" onclick="switchMainTab('timeline')" id="mainTabTimeline">
+        <button class="main-tab" onclick="switchMainTab('timeline')" id="mainTabTimeline">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M12 6v6l4 2"/>
@@ -3298,7 +3298,7 @@
     </div>
 
     <!-- Concept Tab Content -->
-    <div class="main-tab-content" id="conceptContent">
+    <div class="main-tab-content active" id="conceptContent">
         <div class="concept-progress" id="conceptProgress"></div>
         <div class="concept-container">
             <div class="concept-header">
@@ -4207,7 +4207,7 @@
     </div>
 
     <!-- Timeline Tab Content -->
-    <div class="main-tab-content active" id="timelineContent">
+    <div class="main-tab-content" id="timelineContent">
         <div class="timeline-layout">
 
             <!-- Calendar Sidebar -->
