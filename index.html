@@ -1894,13 +1894,13 @@
 
         /* Concept Gallery Styles */
         .concept-container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 1.5rem 1rem;
+            padding: 1.5rem 2rem;
         }
 
         .concept-header {
-            text-align: center;
+            text-align: left;
             margin-bottom: 2rem;
         }
 
@@ -1908,11 +1908,13 @@
             font-size: 1.5rem;
             color: var(--primary);
             margin-bottom: 0.5rem;
+            text-align: left;
         }
 
         .concept-header p {
             color: var(--text-muted);
             font-size: 0.95rem;
+            text-align: justify;
         }
 
         .concept-gallery {
@@ -1941,20 +1943,7 @@
         }
 
         .concept-slide-number {
-            position: absolute;
-            top: 1rem;
-            left: 1rem;
-            background: var(--primary);
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.9rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            display: none;
         }
 
         .concept-slide-wrapper {
@@ -1992,6 +1981,22 @@
             transition: width 0.2s;
         }
 
+        /* Desktop - full width slides */
+        @media (min-width: 1024px) {
+            .concept-container {
+                max-width: 100%;
+                padding: 2rem 3rem;
+            }
+
+            .concept-slide {
+                border-radius: 0.5rem;
+            }
+
+            .concept-slide img {
+                width: 100%;
+            }
+        }
+
         /* Mobile optimizations for concept gallery */
         @media (max-width: 768px) {
             .concept-container {
@@ -2008,14 +2013,6 @@
 
             .concept-slide {
                 border-radius: 0.75rem;
-            }
-
-            .concept-slide-number {
-                width: 30px;
-                height: 30px;
-                font-size: 0.8rem;
-                top: 0.75rem;
-                left: 0.75rem;
             }
 
             .concept-continue-btn {
@@ -3274,19 +3271,19 @@
             </svg>
             Концепция 2026
         </button>
+        <button class="main-tab" onclick="switchMainTab('analysis')" id="mainTabAnalysis">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 12l2 2 4-4"/>
+                <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Линии защиты
+        </button>
         <button class="main-tab active" onclick="switchMainTab('timeline')" id="mainTabTimeline">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M12 6v6l4 2"/>
             </svg>
             Хронология дела
-        </button>
-        <button class="main-tab" onclick="switchMainTab('analysis')" id="mainTabAnalysis">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 12l2 2 4-4"/>
-                <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            Стратегия защиты
         </button>
         <button class="main-tab" onclick="switchMainTab('documents')" id="mainTabDocuments">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
