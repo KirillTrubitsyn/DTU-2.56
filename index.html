@@ -509,6 +509,28 @@
             .card-badges { width: 100%; margin-top: 0.5rem; }
             .info-grid { grid-template-columns: 1fr; }
             .strategy-grid { grid-template-columns: 1fr; }
+
+            /* Documents mobile styles */
+            .documents-container {
+                padding: 1rem;
+                padding-bottom: 100px;
+            }
+            .documents-list {
+                gap: 0.75rem;
+            }
+            .document-card {
+                padding: 1rem;
+                flex-wrap: wrap;
+            }
+            .document-info h3 {
+                font-size: 0.9rem;
+                white-space: normal;
+            }
+            .document-link {
+                width: 100%;
+                justify-content: center;
+                margin-top: 0.5rem;
+            }
         }
 
         /* AI Chat Styles */
@@ -1917,6 +1939,26 @@
             text-align: left !important;
         }
 
+        .concept-download-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.75rem 1.25rem;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .concept-download-link:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
         .concept-gallery {
             display: flex;
             flex-direction: column;
@@ -3295,6 +3337,15 @@
             <div class="concept-header">
                 <h2>Концепция защиты на 2026 год</h2>
                 <p>Ознакомьтесь со стратегией и ключевыми направлениями защиты по делу</p>
+                <a href="https://docs.google.com/document/d/1IpoDPWQt_rzvd8tXr3yG_7bxQQqtQepi/edit?usp=drive_link&ouid=100981517467924755686&rtpof=true&sd=true" target="_blank" class="concept-download-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <path d="M14 2v6h6"/>
+                        <path d="M12 18v-6"/>
+                        <path d="M9 15l3 3 3-3"/>
+                    </svg>
+                    Скачать документ концепции
+                </a>
             </div>
 
             <div class="concept-gallery" id="conceptGallery">
@@ -4996,7 +5047,7 @@
             </div>
 
             <!-- Section IV -->
-            <div class="timeline-section">
+            <div class="timeline-section collapsed">
                 <div class="timeline-section-header" onclick="toggleTimelineSection(this)">
                     <span>IV. 2025–2026 год: Иск на 2,5 миллиарда и судебные споры</span>
                     <span class="event-count">13 событий</span>
@@ -5416,7 +5467,7 @@
 
         function finishConceptViewing() {
             localStorage.setItem('conceptViewed', 'true');
-            switchMainTab('timeline');
+            switchMainTab('analysis');
         }
 
         function checkFirstVisit() {
@@ -6442,14 +6493,6 @@
         function toggleCard(card) {
             card.classList.toggle('expanded');
         }
-
-        // Expand first card by default
-        document.addEventListener('DOMContentLoaded', function() {
-            const firstCard = document.querySelector('.card');
-            if (firstCard) {
-                firstCard.classList.add('expanded');
-            }
-        });
 
         // ========== AI Chat Functionality ==========
 
