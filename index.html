@@ -1894,13 +1894,13 @@
 
         /* Concept Gallery Styles */
         .concept-container {
-            max-width: 75%;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 1.5rem 2rem;
+            padding: 2rem 1rem;
         }
 
         .concept-header {
-            text-align: left;
+            text-align: left !important;
             margin-bottom: 2rem;
         }
 
@@ -1908,13 +1908,13 @@
             font-size: 1.5rem;
             color: var(--primary);
             margin-bottom: 0.5rem;
-            text-align: left;
+            text-align: left !important;
         }
 
         .concept-header p {
             color: var(--text-muted);
             font-size: 0.95rem;
-            text-align: justify;
+            text-align: left !important;
         }
 
         .concept-gallery {
@@ -1981,19 +1981,10 @@
             transition: width 0.2s;
         }
 
-        /* Desktop - full width slides */
+        /* Desktop styles for concept */
         @media (min-width: 1024px) {
-            .concept-container {
-                max-width: 100%;
-                padding: 2rem 3rem;
-            }
-
             .concept-slide {
                 border-radius: 0.5rem;
-            }
-
-            .concept-slide img {
-                width: 100%;
             }
         }
 
