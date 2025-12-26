@@ -1892,6 +1892,139 @@
             display: block;
         }
 
+        /* Concept Gallery Styles */
+        .concept-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem;
+        }
+
+        .concept-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .concept-header h2 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .concept-header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .concept-gallery {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .concept-slide {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .concept-slide:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .concept-slide img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .concept-slide-number {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: var(--primary);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .concept-slide-wrapper {
+            position: relative;
+        }
+
+        .concept-continue-btn {
+            display: block;
+            width: 100%;
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .concept-continue-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(26, 54, 93, 0.3);
+        }
+
+        .concept-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: var(--accent-gold);
+            z-index: 1000;
+            transition: width 0.2s;
+        }
+
+        /* Mobile optimizations for concept gallery */
+        @media (max-width: 768px) {
+            .concept-container {
+                padding: 1rem 0.75rem;
+            }
+
+            .concept-header h2 {
+                font-size: 1.25rem;
+            }
+
+            .concept-gallery {
+                gap: 1rem;
+            }
+
+            .concept-slide {
+                border-radius: 0.75rem;
+            }
+
+            .concept-slide-number {
+                width: 30px;
+                height: 30px;
+                font-size: 0.8rem;
+                top: 0.75rem;
+                left: 0.75rem;
+            }
+
+            .concept-continue-btn {
+                font-size: 1rem;
+                padding: 0.875rem 1.5rem;
+                margin: 1.5rem auto;
+            }
+        }
+
         /* Timeline Styles */
         .timeline-container {
             max-width: 1000px;
@@ -3133,6 +3266,14 @@
 
     <!-- Main Page Navigation Tabs -->
     <div class="main-tabs">
+        <button class="main-tab" onclick="switchMainTab('concept')" id="mainTabConcept">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+            </svg>
+            Концепция 2026
+        </button>
         <button class="main-tab active" onclick="switchMainTab('timeline')" id="mainTabTimeline">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -3157,6 +3298,72 @@
             </svg>
             Документы
         </button>
+    </div>
+
+    <!-- Concept Tab Content -->
+    <div class="main-tab-content" id="conceptContent">
+        <div class="concept-progress" id="conceptProgress"></div>
+        <div class="concept-container">
+            <div class="concept-header">
+                <h2>Концепция защиты на 2026 год</h2>
+                <p>Ознакомьтесь со стратегией и ключевыми направлениями защиты по делу</p>
+            </div>
+
+            <div class="concept-gallery" id="conceptGallery">
+                <div class="concept-slide">
+                    <div class="concept-slide-wrapper">
+                        <div class="concept-slide-number">1</div>
+                        <img src="onboarding/slide1.png" alt="Слайд 1" loading="lazy">
+                    </div>
+                </div>
+                <div class="concept-slide">
+                    <div class="concept-slide-wrapper">
+                        <div class="concept-slide-number">2</div>
+                        <img src="onboarding/slide2.png" alt="Слайд 2" loading="lazy">
+                    </div>
+                </div>
+                <div class="concept-slide">
+                    <div class="concept-slide-wrapper">
+                        <div class="concept-slide-number">3</div>
+                        <img src="onboarding/slide3.png" alt="Слайд 3" loading="lazy">
+                    </div>
+                </div>
+                <div class="concept-slide">
+                    <div class="concept-slide-wrapper">
+                        <div class="concept-slide-number">4</div>
+                        <img src="onboarding/slide4.png" alt="Слайд 4" loading="lazy">
+                    </div>
+                </div>
+                <div class="concept-slide">
+                    <div class="concept-slide-wrapper">
+                        <div class="concept-slide-number">5</div>
+                        <img src="onboarding/slide5.png" alt="Слайд 5" loading="lazy">
+                    </div>
+                </div>
+                <div class="concept-slide">
+                    <div class="concept-slide-wrapper">
+                        <div class="concept-slide-number">6</div>
+                        <img src="onboarding/slide6.png" alt="Слайд 6" loading="lazy">
+                    </div>
+                </div>
+                <div class="concept-slide">
+                    <div class="concept-slide-wrapper">
+                        <div class="concept-slide-number">7</div>
+                        <img src="onboarding/slide7.png" alt="Слайд 7" loading="lazy">
+                    </div>
+                </div>
+                <div class="concept-slide">
+                    <div class="concept-slide-wrapper">
+                        <div class="concept-slide-number">8</div>
+                        <img src="onboarding/slide8.png" alt="Слайд 8" loading="lazy">
+                    </div>
+                </div>
+            </div>
+
+            <button class="concept-continue-btn" onclick="finishConceptViewing()">
+                Перейти к делу
+            </button>
+        </div>
     </div>
 
     <!-- Analysis Tab Content -->
@@ -5190,7 +5397,10 @@
             document.querySelectorAll('.main-tab-content').forEach(content => content.classList.remove('active'));
 
             // Add active class to selected tab and content
-            if (tabName === 'analysis') {
+            if (tabName === 'concept') {
+                document.getElementById('mainTabConcept').classList.add('active');
+                document.getElementById('conceptContent').classList.add('active');
+            } else if (tabName === 'analysis') {
                 document.getElementById('mainTabAnalysis').classList.add('active');
                 document.getElementById('analysisContent').classList.add('active');
             } else if (tabName === 'timeline') {
@@ -5204,6 +5414,36 @@
             // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+
+        // ========== Concept Gallery Functions ==========
+        function updateConceptProgress() {
+            const conceptContent = document.getElementById('conceptContent');
+            if (!conceptContent.classList.contains('active')) return;
+
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+            document.getElementById('conceptProgress').style.width = progress + '%';
+        }
+
+        function finishConceptViewing() {
+            localStorage.setItem('conceptViewed', 'true');
+            switchMainTab('timeline');
+        }
+
+        function checkFirstVisit() {
+            const conceptViewed = localStorage.getItem('conceptViewed');
+            if (!conceptViewed) {
+                // First visit - show concept page
+                switchMainTab('concept');
+            }
+        }
+
+        // Initialize concept progress tracking
+        window.addEventListener('scroll', updateConceptProgress);
+
+        // Check first visit on page load
+        document.addEventListener('DOMContentLoaded', checkFirstVisit);
 
         // ========== Documents Functions ==========
         let docsAdminLoggedIn = false;
