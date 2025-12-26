@@ -184,3 +184,57 @@ INSERT INTO documents (title, content, source, category) VALUES
   'evidence'
 );
 */
+
+-- =====================================================
+-- Таблица для ссылок на документы (раздел "Документы")
+-- Хранит метаданные документов для отображения в UI
+-- =====================================================
+CREATE TABLE IF NOT EXISTS document_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT,
+  url TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'link', -- 'link' или 'file'
+  file_name TEXT, -- имя файла в Supabase Storage (для type='file')
+  original_name TEXT, -- оригинальное имя файла
+  file_size INTEGER, -- размер файла в байтах
+  storage TEXT DEFAULT 'external', -- 'supabase' или 'external'
+  is_default BOOLEAN DEFAULT false, -- документы по умолчанию
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX IF NOT EXISTS document_links_created_idx ON document_links(created_at DESC);
+
+-- RLS политики
+ALTER TABLE document_links ENABLE ROW LEVEL SECURITY;
+
+-- Все могут читать
+CREATE POLICY "Document links are viewable by everyone" ON document_links
+  FOR SELECT USING (true);
+
+-- Все могут добавлять (проверка пароля на уровне API)
+CREATE POLICY "Anyone can insert document links" ON document_links
+  FOR INSERT WITH CHECK (true);
+
+-- Все могут удалять (проверка пароля на уровне API)
+CREATE POLICY "Anyone can delete document links" ON document_links
+  FOR DELETE USING (true);
+
+-- Документы по умолчанию
+INSERT INTO document_links (title, description, url, type, is_default) VALUES
+(
+  'Справка о споре РПН - ДТУ на 23.12.2025',
+  'Google Документ',
+  'https://docs.google.com/document/d/1IpoDPWQt_rzvd8tXr3yG_7bxQQqtQepi/edit?usp=drive_link&ouid=100981517467924755686&rtpof=true&sd=true',
+  'link',
+  true
+),
+(
+  'Таймлайн дела',
+  'Google Документ',
+  'https://docs.google.com/document/d/1D92lJRMqVtFQ96VA-7X2DTsjjhOx9HCS/edit?usp=drive_link&ouid=100981517467924755686&rtpof=true&sd=true',
+  'link',
+  true
+)
+ON CONFLICT DO NOTHING;

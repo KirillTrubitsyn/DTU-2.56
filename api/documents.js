@@ -5,177 +5,165 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
+// Пароль администратора
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Braesecke1973';
-
-// Получение embedding через Supabase Edge Function
-async function getEmbedding(text) {
-  try {
-    const { data, error } = await supabase.functions.invoke('embed', {
-      body: { text }
-    });
-    if (error) throw error;
-    return data.embedding;
-  } catch (error) {
-    console.error('Embedding error:', error);
-    return null;
-  }
-}
 
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  const { password } = req.method === 'GET' ? req.query : req.body;
+  // GET - получить все документы
+  if (req.method === 'GET') {
+    try {
+      const { data, error } = await supabase
+        .from('document_links')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  // Проверка пароля
-  if (password !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Неверный пароль' });
-  }
-
-  try {
-    // GET - список документов
-    if (req.method === 'GET') {
-      const { category, page = 1, limit = 50 } = req.query;
-      const offset = (parseInt(page) - 1) * parseInt(limit);
-
-      // Получаем общее количество
-      let countQuery = supabase
-        .from('documents')
-        .select('*', { count: 'exact', head: true });
-
-      if (category && category !== 'all') {
-        countQuery = countQuery.eq('category', category);
+      if (error) {
+        console.error('Fetch documents error:', error);
+        throw error;
       }
 
-      const { count } = await countQuery;
+      return res.status(200).json({ documents: data || [] });
 
-      // Получаем документы
-      let query = supabase
-        .from('documents')
-        .select('id, title, source, category, created_at, content')
-        .order('created_at', { ascending: false })
-        .range(offset, offset + parseInt(limit) - 1);
-
-      if (category && category !== 'all') {
-        query = query.eq('category', category);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      // Получаем статистику по категориям
-      const { data: allDocs } = await supabase
-        .from('documents')
-        .select('category');
-
-      const categoryStats = {};
-      if (allDocs) {
-        allDocs.forEach(doc => {
-          const cat = doc.category || 'документ';
-          categoryStats[cat] = (categoryStats[cat] || 0) + 1;
-        });
-      }
-
-      return res.status(200).json({
-        documents: data || [],
-        total: count || 0,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        categoryStats
+    } catch (error) {
+      console.error('Get documents error:', error);
+      return res.status(500).json({
+        error: 'Ошибка загрузки документов',
+        details: error.message
       });
     }
+  }
 
-    // PUT - обновление документа
-    if (req.method === 'PUT') {
-      const { id, title, content, source, category } = req.body;
+  // POST - добавить документ
+  if (req.method === 'POST') {
+    try {
+      const {
+        password,
+        title,
+        description,
+        url,
+        type = 'link',
+        fileName,
+        originalName,
+        fileSize,
+        storage = 'external'
+      } = req.body;
 
-      if (!id) {
-        return res.status(400).json({ error: 'ID документа обязателен' });
+      // Проверка пароля
+      if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Неверный пароль' });
       }
 
-      // Обновляем embedding если изменился контент
-      let updateData = { title, source, category };
-      if (content !== undefined) {
-        updateData.content = content;
-        const embedding = await getEmbedding(content);
-        if (embedding) {
-          updateData.embedding = embedding;
-        }
+      // Валидация
+      if (!title || !url) {
+        return res.status(400).json({ error: 'Требуется название и URL документа' });
       }
 
+      // Вставка в базу
       const { data, error } = await supabase
-        .from('documents')
-        .update(updateData)
-        .eq('id', id)
+        .from('document_links')
+        .insert({
+          title,
+          description: description || '',
+          url,
+          type,
+          file_name: fileName || null,
+          original_name: originalName || null,
+          file_size: fileSize || null,
+          storage,
+          is_default: false
+        })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Insert document error:', error);
+        throw error;
+      }
+
+      console.log(`[Documents] Added: "${title}"`);
 
       return res.status(200).json({
         success: true,
+        message: 'Документ добавлен',
         document: data
       });
+
+    } catch (error) {
+      console.error('Add document error:', error);
+      return res.status(500).json({
+        error: 'Ошибка добавления документа',
+        details: error.message
+      });
     }
+  }
 
-    // DELETE - удаление документа или всех документов
-    if (req.method === 'DELETE') {
-      const { id, deleteAll } = req.body;
+  // DELETE - удалить документ
+  if (req.method === 'DELETE') {
+    try {
+      const { password, id } = req.body;
 
-      // Удаление всех документов
-      if (deleteAll === true) {
-        // Сначала получаем количество
-        const { count } = await supabase
-          .from('documents')
-          .select('*', { count: 'exact', head: true });
-
-        // Удаляем все документы
-        const { error } = await supabase
-          .from('documents')
-          .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000'); // Удаляем все (обходной путь для Supabase)
-
-        if (error) throw error;
-
-        return res.status(200).json({
-          success: true,
-          message: 'Все документы удалены',
-          deletedCount: count
-        });
+      // Проверка пароля
+      if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Неверный пароль' });
       }
 
-      // Удаление одного документа
       if (!id) {
-        return res.status(400).json({ error: 'ID документа обязателен' });
+        return res.status(400).json({ error: 'Требуется ID документа' });
       }
 
+      // Получаем документ для проверки файла в storage
+      const { data: doc } = await supabase
+        .from('document_links')
+        .select('file_name, storage')
+        .eq('id', id)
+        .single();
+
+      // Удаляем файл из Supabase Storage если это загруженный файл
+      if (doc?.storage === 'supabase' && doc?.file_name) {
+        const { error: storageError } = await supabase.storage
+          .from('documents')
+          .remove([doc.file_name]);
+
+        if (storageError) {
+          console.error('Storage delete error:', storageError);
+        }
+      }
+
+      // Удаляем запись из базы
       const { error } = await supabase
-        .from('documents')
+        .from('document_links')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Delete document error:', error);
+        throw error;
+      }
+
+      console.log(`[Documents] Deleted: ${id}`);
 
       return res.status(200).json({
         success: true,
         message: 'Документ удалён'
       });
+
+    } catch (error) {
+      console.error('Delete document error:', error);
+      return res.status(500).json({
+        error: 'Ошибка удаления документа',
+        details: error.message
+      });
     }
-
-    return res.status(405).json({ error: 'Method not allowed' });
-
-  } catch (error) {
-    console.error('Documents API error:', error);
-    return res.status(500).json({
-      error: 'Ошибка при работе с документами',
-      details: error.message
-    });
   }
+
+  return res.status(405).json({ error: 'Method not allowed' });
 }

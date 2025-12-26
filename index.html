@@ -5603,31 +5603,47 @@
             }
         }
 
-        // Load documents from localStorage
-        // Default documents (added on first load)
-        const defaultDocuments = [
-            {
-                title: 'Справка о споре РПН - ДТУ на 23.12.2025',
-                description: 'Google Документ',
-                url: 'https://docs.google.com/document/d/1IpoDPWQt_rzvd8tXr3yG_7bxQQqtQepi/edit?usp=drive_link&ouid=100981517467924755686&rtpof=true&sd=true',
-                type: 'link',
-                isDefault: true
-            },
-            {
-                title: 'Таймлайн дела',
-                description: 'Google Документ',
-                url: 'https://docs.google.com/document/d/1D92lJRMqVtFQ96VA-7X2DTsjjhOx9HCS/edit?usp=drive_link&ouid=100981517467924755686&rtpof=true&sd=true',
-                type: 'link',
-                isDefault: true
-            }
-        ];
+        // Load documents from Supabase API
+        let savedDocuments = [];
+        let documentsLoaded = false;
 
-        // Load saved documents, add defaults if empty
-        let savedDocuments = JSON.parse(localStorage.getItem('dtuDocuments') || '[]');
-        if (savedDocuments.length === 0) {
-            savedDocuments = [...defaultDocuments];
-            localStorage.setItem('dtuDocuments', JSON.stringify(savedDocuments));
+        // Загрузка документов из Supabase
+        async function loadDocuments() {
+            try {
+                const response = await fetch('/api/documents');
+                const data = await response.json();
+
+                if (data.documents && data.documents.length > 0) {
+                    // Преобразуем snake_case в camelCase для совместимости
+                    savedDocuments = data.documents.map(doc => ({
+                        id: doc.id,
+                        title: doc.title,
+                        description: doc.description,
+                        url: doc.url,
+                        type: doc.type,
+                        fileName: doc.file_name,
+                        originalName: doc.original_name,
+                        fileSize: doc.file_size,
+                        storage: doc.storage,
+                        isDefault: doc.is_default,
+                        createdAt: doc.created_at
+                    }));
+                } else {
+                    savedDocuments = [];
+                }
+                documentsLoaded = true;
+                renderSavedDocuments();
+            } catch (error) {
+                console.error('Error loading documents:', error);
+                // Fallback - показываем пустой список
+                savedDocuments = [];
+                documentsLoaded = true;
+                renderSavedDocuments();
+            }
         }
+
+        // Загружаем документы при старте
+        loadDocuments();
 
         function renderSavedDocuments() {
             const list = document.getElementById('documentsList');
@@ -5711,8 +5727,8 @@
                 return;
             }
 
-            deleteList.innerHTML = savedDocuments.map((doc, index) => `
-                <div class="delete-item" onclick="deleteListDocument(${index})" title="Нажмите для удаления">
+            deleteList.innerHTML = savedDocuments.map((doc) => `
+                <div class="delete-item" onclick="deleteListDocument('${doc.id}')" title="Нажмите для удаления">
                     <span class="delete-item-title">${escapeHtml(doc.title)}</span>
                     <span class="delete-item-btn">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -5749,8 +5765,8 @@
                     alert('Введите ссылку на документ');
                     return;
                 }
-                savedDocuments.push({ title, description, url, type: 'link', date: new Date().toISOString() });
-                saveAndRenderDocs();
+                // Сохраняем ссылку через API
+                saveDocumentToSupabase({ title, description, url, type: 'link' });
             } else {
                 const fileInput = document.getElementById('newDocFileInput');
                 if (!fileInput?.files.length) {
@@ -5797,8 +5813,8 @@
                             throw new Error(data.error || 'Ошибка загрузки');
                         }
 
-                        // Save document metadata with Supabase URL
-                        savedDocuments.push({
+                        // Save document metadata to Supabase
+                        await saveDocumentToSupabase({
                             title,
                             description: description || file.name,
                             url: data.file.url,
@@ -5806,7 +5822,6 @@
                             fileName: data.file.name,
                             originalName: file.name,
                             fileSize: file.size,
-                            date: new Date().toISOString(),
                             storage: 'supabase'
                         });
 
@@ -5814,7 +5829,6 @@
                             addBtn.textContent = originalText;
                             addBtn.disabled = false;
                         }
-                        saveAndRenderDocs();
 
                     } catch (error) {
                         console.error('Upload error:', error);
@@ -5836,49 +5850,70 @@
             }
         }
 
-        function saveAndRenderDocs() {
+        // Сохранение документа в Supabase через API
+        async function saveDocumentToSupabase(docData) {
             try {
-                localStorage.setItem('dtuDocuments', JSON.stringify(savedDocuments));
+                const response = await fetch('/api/documents', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        password: docsAdminPassword,
+                        title: docData.title,
+                        description: docData.description,
+                        url: docData.url,
+                        type: docData.type || 'link',
+                        fileName: docData.fileName,
+                        originalName: docData.originalName,
+                        fileSize: docData.fileSize,
+                        storage: docData.storage || 'external'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Ошибка сохранения');
+                }
+
                 alert('Документ успешно добавлен!');
+                // Перезагружаем список документов
+                await loadDocuments();
+                resetDocsForm();
             } catch (e) {
                 console.error('Ошибка сохранения:', e);
-                alert('Ошибка сохранения документа');
+                alert('Ошибка сохранения документа: ' + e.message);
             }
-            requestAnimationFrame(() => {
-                renderSavedDocuments();
-                resetDocsForm();
-            });
         }
 
-        async function deleteListDocument(index) {
+        async function deleteListDocument(docId) {
             if (!docsAdminPassword) {
                 alert('Удаление документов доступно только администратору');
                 return;
             }
 
             if (confirm('Удалить этот документ?')) {
-                const doc = savedDocuments[index];
+                try {
+                    const response = await fetch('/api/documents', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            password: docsAdminPassword,
+                            id: docId
+                        })
+                    });
 
-                // If file was stored in Supabase, delete from storage too
-                if (doc.storage === 'supabase' && doc.fileName) {
-                    try {
-                        await fetch('/api/files', {
-                            method: 'DELETE',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                password: docsAdminPassword,
-                                fileName: doc.fileName
-                            })
-                        });
-                    } catch (error) {
-                        console.error('Error deleting from storage:', error);
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Ошибка удаления');
                     }
-                }
 
-                savedDocuments.splice(index, 1);
-                localStorage.setItem('dtuDocuments', JSON.stringify(savedDocuments));
-                renderSavedDocuments();
-                renderDeleteList(); // Update delete list
+                    // Перезагружаем список документов
+                    await loadDocuments();
+                } catch (error) {
+                    console.error('Error deleting document:', error);
+                    alert('Ошибка удаления: ' + error.message);
+                }
             }
         }
 
