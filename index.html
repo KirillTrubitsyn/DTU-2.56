@@ -4032,7 +4032,7 @@
 
                         <!-- Category Filter -->
                         <div class="doc-filter" style="display: flex; gap: 0.5rem; align-items: center;">
-                            <select id="docFilterCategory" onchange="loadDocuments()" style="flex: 1;">
+                            <select id="docFilterCategory" onchange="loadRagDocuments()" style="flex: 1;">
                                 <option value="all">Все категории</option>
                                 <option value="документ">Документ</option>
                                 <option value="договор">Договор</option>
@@ -7122,7 +7122,7 @@
             document.getElementById('adminPassword').value = '';
 
             // Load documents count
-            loadDocuments();
+            loadRagDocuments();
         }
 
         function adminLogout() {
@@ -7185,7 +7185,7 @@
                 showAdminMessage(data.message, 'success');
                 clearUploadForm();
                 // Refresh document list
-                loadDocuments();
+                loadRagDocuments();
 
             } catch (error) {
                 console.error('Upload error:', error);
@@ -7217,11 +7217,11 @@
                 docsTab.classList.add('active');
                 uploadContent.classList.remove('active');
                 docsContent.classList.add('active');
-                loadDocuments();
+                loadRagDocuments();
             }
         }
 
-        async function loadDocuments() {
+        async function loadRagDocuments() {
             const docList = document.getElementById('docList');
             const category = document.getElementById('docFilterCategory').value;
 
@@ -7326,7 +7326,7 @@
 
         function changePage(delta) {
             currentPage += delta;
-            loadDocuments();
+            loadRagDocuments();
         }
 
         // Documents cache for editing
@@ -7405,7 +7405,7 @@
 
                 showAdminMessage('Документ обновлён', 'success');
                 closeEditModal();
-                loadDocuments();
+                loadRagDocuments();
 
             } catch (error) {
                 console.error('Save document error:', error);
@@ -7435,7 +7435,7 @@
                 }
 
                 showAdminMessage('Документ удалён', 'success');
-                loadDocuments();
+                loadRagDocuments();
 
             } catch (error) {
                 console.error('Delete document error:', error);
@@ -7470,7 +7470,7 @@
                 }
 
                 showAdminMessage(`Удалено ${data.deletedCount || 'все'} документов`, 'success');
-                loadDocuments();
+                loadRagDocuments();
 
             } catch (error) {
                 console.error('Delete all documents error:', error);
